@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sandbox-gql/ent"
 	"sandbox-gql/graph"
+	"sandbox-gql/internal/env"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 )
@@ -13,6 +14,6 @@ func NewServer(dbClient *ent.Client) *handler.Server {
 	return handler.NewDefaultServer(graph.NewSchema(dbClient))
 }
 
-func ListenAndServe(server, port string, handler http.Handler) error {
-	return http.ListenAndServe(fmt.Sprintf("%s:%s", server, port), handler)
+func ListenAndServe(srvvars *env.Server, handler http.Handler) error {
+	return http.ListenAndServe(fmt.Sprintf("%s:%s", srvvars.Host(), srvvars.Port()), handler)
 }
