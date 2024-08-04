@@ -28,3 +28,16 @@ gqlgen init
 ```zsh
 gqlgen generate
 ```
+
+## install ent
+
+```zsh
+go get entgo.io/ent/cmd/ent
+go get entgo.io/contrib/entgql
+```
+
+## create shcelton code
+
+```zsh
+go run -mod=mod entgo.io/ent/cmd/ent new Todo
+```
