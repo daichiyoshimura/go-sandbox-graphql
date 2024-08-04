@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"os"
@@ -23,24 +22,12 @@ func main() {
 		log.Fatalf("failed opening connection to mysql: %v", err)
 	}
 
-	ctx := context.Background()
-	u, err := client.Todo.
-		Create().
-		SetName("John").
-		SetEmail("hogehoge@gmail.com").
-		SetDone(false).
-		Save(ctx)
-	if err != nil {
-		log.Fatalf("failed creating user: %v", err)
-	}
-	log.Println("user was created: ", u)
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
 	}
 
-	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
+	srv := handler.NewDefaultServer(graph.NewSchema(client))
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
