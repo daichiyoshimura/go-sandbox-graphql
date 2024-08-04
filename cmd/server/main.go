@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -20,6 +21,11 @@ func main() {
 	client, err := db.Client()
 	if err != nil {
 		log.Fatalf("failed opening connection to mysql: %v", err)
+	}
+	defer client.Close()
+
+	if err := client.Schema.Create(context.Background()); err != nil {
+		log.Fatalf("failed creating schema resources: %v", err)
 	}
 
 	port := os.Getenv("PORT")
