@@ -3,41 +3,42 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
+
 	"os"
-	"sandbox-gql/graph"
+
 	"sandbox-gql/internal/db"
+	"sandbox-gql/internal/server"
 
 	_ "github.com/go-sql-driver/mysql"
-
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
 )
 
 const defaultPort = "8080"
 
 func main() {
 
-	client, err := db.Client()
+	// database client
+	dbClient, err := db.Client()
 	if err != nil {
 		log.Fatalf("failed opening connection to mysql: %v", err)
 	}
-	defer client.Close()
+	defer dbClient.Close()
 
-	if err := client.Schema.Create(context.Background()); err != nil {
+	// database migration
+	if err := dbClient.Schema.Create(context.Background()); err != nil {
 		log.Fatalf("failed creating schema resources: %v", err)
 	}
 
+	// env
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
 	}
 
-	srv := handler.NewDefaultServer(graph.NewSchema(client))
-
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
-
+	// server
+	srv := server.NewServer(dbClient)
+	server.DefineRoute(srv)
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	if err := server.ListenAndServe(":", port, nil); err != nil {
+		log.Fatal(err)
+	}
 }
