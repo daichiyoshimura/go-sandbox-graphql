@@ -5,7 +5,10 @@ package ent
 import (
 	"context"
 	"errors"
-	"sandbox-gql/ent/todo"
+	"fmt"
+	"io"
+	"sandbox-gql/ent/account"
+	"strconv"
 
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
@@ -95,20 +98,20 @@ func paginateLimit(first, last *int) int {
 	return limit
 }
 
-// TodoEdge is the edge representation of Todo.
-type TodoEdge struct {
-	Node   *Todo  `json:"node"`
-	Cursor Cursor `json:"cursor"`
+// AccountEdge is the edge representation of Account.
+type AccountEdge struct {
+	Node   *Account `json:"node"`
+	Cursor Cursor   `json:"cursor"`
 }
 
-// TodoConnection is the connection containing edges to Todo.
-type TodoConnection struct {
-	Edges      []*TodoEdge `json:"edges"`
-	PageInfo   PageInfo    `json:"pageInfo"`
-	TotalCount int         `json:"totalCount"`
+// AccountConnection is the connection containing edges to Account.
+type AccountConnection struct {
+	Edges      []*AccountEdge `json:"edges"`
+	PageInfo   PageInfo       `json:"pageInfo"`
+	TotalCount int            `json:"totalCount"`
 }
 
-func (c *TodoConnection) build(nodes []*Todo, pager *todoPager, after *Cursor, first *int, before *Cursor, last *int) {
+func (c *AccountConnection) build(nodes []*Account, pager *accountPager, after *Cursor, first *int, before *Cursor, last *int) {
 	c.PageInfo.HasNextPage = before != nil
 	c.PageInfo.HasPreviousPage = after != nil
 	if first != nil && *first+1 == len(nodes) {
@@ -118,21 +121,21 @@ func (c *TodoConnection) build(nodes []*Todo, pager *todoPager, after *Cursor, f
 		c.PageInfo.HasPreviousPage = true
 		nodes = nodes[:len(nodes)-1]
 	}
-	var nodeAt func(int) *Todo
+	var nodeAt func(int) *Account
 	if last != nil {
 		n := len(nodes) - 1
-		nodeAt = func(i int) *Todo {
+		nodeAt = func(i int) *Account {
 			return nodes[n-i]
 		}
 	} else {
-		nodeAt = func(i int) *Todo {
+		nodeAt = func(i int) *Account {
 			return nodes[i]
 		}
 	}
-	c.Edges = make([]*TodoEdge, len(nodes))
+	c.Edges = make([]*AccountEdge, len(nodes))
 	for i := range nodes {
 		node := nodeAt(i)
-		c.Edges[i] = &TodoEdge{
+		c.Edges[i] = &AccountEdge{
 			Node:   node,
 			Cursor: pager.toCursor(node),
 		}
@@ -146,87 +149,87 @@ func (c *TodoConnection) build(nodes []*Todo, pager *todoPager, after *Cursor, f
 	}
 }
 
-// TodoPaginateOption enables pagination customization.
-type TodoPaginateOption func(*todoPager) error
+// AccountPaginateOption enables pagination customization.
+type AccountPaginateOption func(*accountPager) error
 
-// WithTodoOrder configures pagination ordering.
-func WithTodoOrder(order *TodoOrder) TodoPaginateOption {
+// WithAccountOrder configures pagination ordering.
+func WithAccountOrder(order *AccountOrder) AccountPaginateOption {
 	if order == nil {
-		order = DefaultTodoOrder
+		order = DefaultAccountOrder
 	}
 	o := *order
-	return func(pager *todoPager) error {
+	return func(pager *accountPager) error {
 		if err := o.Direction.Validate(); err != nil {
 			return err
 		}
 		if o.Field == nil {
-			o.Field = DefaultTodoOrder.Field
+			o.Field = DefaultAccountOrder.Field
 		}
 		pager.order = &o
 		return nil
 	}
 }
 
-// WithTodoFilter configures pagination filter.
-func WithTodoFilter(filter func(*TodoQuery) (*TodoQuery, error)) TodoPaginateOption {
-	return func(pager *todoPager) error {
+// WithAccountFilter configures pagination filter.
+func WithAccountFilter(filter func(*AccountQuery) (*AccountQuery, error)) AccountPaginateOption {
+	return func(pager *accountPager) error {
 		if filter == nil {
-			return errors.New("TodoQuery filter cannot be nil")
+			return errors.New("AccountQuery filter cannot be nil")
 		}
 		pager.filter = filter
 		return nil
 	}
 }
 
-type todoPager struct {
+type accountPager struct {
 	reverse bool
-	order   *TodoOrder
-	filter  func(*TodoQuery) (*TodoQuery, error)
+	order   *AccountOrder
+	filter  func(*AccountQuery) (*AccountQuery, error)
 }
 
-func newTodoPager(opts []TodoPaginateOption, reverse bool) (*todoPager, error) {
-	pager := &todoPager{reverse: reverse}
+func newAccountPager(opts []AccountPaginateOption, reverse bool) (*accountPager, error) {
+	pager := &accountPager{reverse: reverse}
 	for _, opt := range opts {
 		if err := opt(pager); err != nil {
 			return nil, err
 		}
 	}
 	if pager.order == nil {
-		pager.order = DefaultTodoOrder
+		pager.order = DefaultAccountOrder
 	}
 	return pager, nil
 }
 
-func (p *todoPager) applyFilter(query *TodoQuery) (*TodoQuery, error) {
+func (p *accountPager) applyFilter(query *AccountQuery) (*AccountQuery, error) {
 	if p.filter != nil {
 		return p.filter(query)
 	}
 	return query, nil
 }
 
-func (p *todoPager) toCursor(t *Todo) Cursor {
-	return p.order.Field.toCursor(t)
+func (p *accountPager) toCursor(a *Account) Cursor {
+	return p.order.Field.toCursor(a)
 }
 
-func (p *todoPager) applyCursors(query *TodoQuery, after, before *Cursor) (*TodoQuery, error) {
+func (p *accountPager) applyCursors(query *AccountQuery, after, before *Cursor) (*AccountQuery, error) {
 	direction := p.order.Direction
 	if p.reverse {
 		direction = direction.Reverse()
 	}
-	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultTodoOrder.Field.column, p.order.Field.column, direction) {
+	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultAccountOrder.Field.column, p.order.Field.column, direction) {
 		query = query.Where(predicate)
 	}
 	return query, nil
 }
 
-func (p *todoPager) applyOrder(query *TodoQuery) *TodoQuery {
+func (p *accountPager) applyOrder(query *AccountQuery) *AccountQuery {
 	direction := p.order.Direction
 	if p.reverse {
 		direction = direction.Reverse()
 	}
 	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
-	if p.order.Field != DefaultTodoOrder.Field {
-		query = query.Order(DefaultTodoOrder.Field.toTerm(direction.OrderTermOption()))
+	if p.order.Field != DefaultAccountOrder.Field {
+		query = query.Order(DefaultAccountOrder.Field.toTerm(direction.OrderTermOption()))
 	}
 	if len(query.ctx.Fields) > 0 {
 		query.ctx.AppendFieldOnce(p.order.Field.column)
@@ -234,7 +237,7 @@ func (p *todoPager) applyOrder(query *TodoQuery) *TodoQuery {
 	return query
 }
 
-func (p *todoPager) orderExpr(query *TodoQuery) sql.Querier {
+func (p *accountPager) orderExpr(query *AccountQuery) sql.Querier {
 	direction := p.order.Direction
 	if p.reverse {
 		direction = direction.Reverse()
@@ -244,33 +247,33 @@ func (p *todoPager) orderExpr(query *TodoQuery) sql.Querier {
 	}
 	return sql.ExprFunc(func(b *sql.Builder) {
 		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
-		if p.order.Field != DefaultTodoOrder.Field {
-			b.Comma().Ident(DefaultTodoOrder.Field.column).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultAccountOrder.Field {
+			b.Comma().Ident(DefaultAccountOrder.Field.column).Pad().WriteString(string(direction))
 		}
 	})
 }
 
-// Paginate executes the query and returns a relay based cursor connection to Todo.
-func (t *TodoQuery) Paginate(
+// Paginate executes the query and returns a relay based cursor connection to Account.
+func (a *AccountQuery) Paginate(
 	ctx context.Context, after *Cursor, first *int,
-	before *Cursor, last *int, opts ...TodoPaginateOption,
-) (*TodoConnection, error) {
+	before *Cursor, last *int, opts ...AccountPaginateOption,
+) (*AccountConnection, error) {
 	if err := validateFirstLast(first, last); err != nil {
 		return nil, err
 	}
-	pager, err := newTodoPager(opts, last != nil)
+	pager, err := newAccountPager(opts, last != nil)
 	if err != nil {
 		return nil, err
 	}
-	if t, err = pager.applyFilter(t); err != nil {
+	if a, err = pager.applyFilter(a); err != nil {
 		return nil, err
 	}
-	conn := &TodoConnection{Edges: []*TodoEdge{}}
+	conn := &AccountConnection{Edges: []*AccountEdge{}}
 	ignoredEdges := !hasCollectedField(ctx, edgesField)
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			c := t.Clone()
+			c := a.Clone()
 			c.ctx.Fields = nil
 			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
@@ -282,20 +285,20 @@ func (t *TodoQuery) Paginate(
 	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
 		return conn, nil
 	}
-	if t, err = pager.applyCursors(t, after, before); err != nil {
+	if a, err = pager.applyCursors(a, after, before); err != nil {
 		return nil, err
 	}
 	limit := paginateLimit(first, last)
 	if limit != 0 {
-		t.Limit(limit)
+		a.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := t.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := a.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
-	t = pager.applyOrder(t)
-	nodes, err := t.All(ctx)
+	a = pager.applyOrder(a)
+	nodes, err := a.All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -303,43 +306,108 @@ func (t *TodoQuery) Paginate(
 	return conn, nil
 }
 
-// TodoOrderField defines the ordering field of Todo.
-type TodoOrderField struct {
-	// Value extracts the ordering value from the given Todo.
-	Value    func(*Todo) (ent.Value, error)
-	column   string // field or computed.
-	toTerm   func(...sql.OrderTermOption) todo.OrderOption
-	toCursor func(*Todo) Cursor
-}
-
-// TodoOrder defines the ordering of Todo.
-type TodoOrder struct {
-	Direction OrderDirection  `json:"direction"`
-	Field     *TodoOrderField `json:"field"`
-}
-
-// DefaultTodoOrder is the default ordering of Todo.
-var DefaultTodoOrder = &TodoOrder{
-	Direction: entgql.OrderDirectionAsc,
-	Field: &TodoOrderField{
-		Value: func(t *Todo) (ent.Value, error) {
-			return t.ID, nil
+var (
+	// AccountOrderFieldName orders Account by name.
+	AccountOrderFieldName = &AccountOrderField{
+		Value: func(a *Account) (ent.Value, error) {
+			return a.Name, nil
 		},
-		column: todo.FieldID,
-		toTerm: todo.ByID,
-		toCursor: func(t *Todo) Cursor {
-			return Cursor{ID: t.ID}
+		column: account.FieldName,
+		toTerm: account.ByName,
+		toCursor: func(a *Account) Cursor {
+			return Cursor{
+				ID:    a.ID,
+				Value: a.Name,
+			}
+		},
+	}
+	// AccountOrderFieldEmail orders Account by email.
+	AccountOrderFieldEmail = &AccountOrderField{
+		Value: func(a *Account) (ent.Value, error) {
+			return a.Email, nil
+		},
+		column: account.FieldEmail,
+		toTerm: account.ByEmail,
+		toCursor: func(a *Account) Cursor {
+			return Cursor{
+				ID:    a.ID,
+				Value: a.Email,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f AccountOrderField) String() string {
+	var str string
+	switch f.column {
+	case AccountOrderFieldName.column:
+		str = "ID"
+	case AccountOrderFieldEmail.column:
+		str = "EMAIL"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f AccountOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *AccountOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("AccountOrderField %T must be a string", v)
+	}
+	switch str {
+	case "ID":
+		*f = *AccountOrderFieldName
+	case "EMAIL":
+		*f = *AccountOrderFieldEmail
+	default:
+		return fmt.Errorf("%s is not a valid AccountOrderField", str)
+	}
+	return nil
+}
+
+// AccountOrderField defines the ordering field of Account.
+type AccountOrderField struct {
+	// Value extracts the ordering value from the given Account.
+	Value    func(*Account) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) account.OrderOption
+	toCursor func(*Account) Cursor
+}
+
+// AccountOrder defines the ordering of Account.
+type AccountOrder struct {
+	Direction OrderDirection     `json:"direction"`
+	Field     *AccountOrderField `json:"field"`
+}
+
+// DefaultAccountOrder is the default ordering of Account.
+var DefaultAccountOrder = &AccountOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &AccountOrderField{
+		Value: func(a *Account) (ent.Value, error) {
+			return a.ID, nil
+		},
+		column: account.FieldID,
+		toTerm: account.ByID,
+		toCursor: func(a *Account) Cursor {
+			return Cursor{ID: a.ID}
 		},
 	},
 }
 
-// ToEdge converts Todo into TodoEdge.
-func (t *Todo) ToEdge(order *TodoOrder) *TodoEdge {
+// ToEdge converts Account into AccountEdge.
+func (a *Account) ToEdge(order *AccountOrder) *AccountEdge {
 	if order == nil {
-		order = DefaultTodoOrder
+		order = DefaultAccountOrder
 	}
-	return &TodoEdge{
-		Node:   t,
-		Cursor: order.Field.toCursor(t),
+	return &AccountEdge{
+		Node:   a,
+		Cursor: order.Field.toCursor(a),
 	}
 }

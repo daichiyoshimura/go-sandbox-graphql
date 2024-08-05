@@ -2,56 +2,68 @@
 
 package ent
 
-// CreateTodoInput represents a mutation input for creating todos.
-type CreateTodoInput struct {
-	Name  string
-	Email string
-	Done  *bool
+import (
+	"time"
+)
+
+// CreateAccountInput represents a mutation input for creating accounts.
+type CreateAccountInput struct {
+	Name      string
+	Email     string
+	CreatedAt *time.Time
+	UpdatedAt *time.Time
 }
 
-// Mutate applies the CreateTodoInput on the TodoMutation builder.
-func (i *CreateTodoInput) Mutate(m *TodoMutation) {
+// Mutate applies the CreateAccountInput on the AccountMutation builder.
+func (i *CreateAccountInput) Mutate(m *AccountMutation) {
 	m.SetName(i.Name)
 	m.SetEmail(i.Email)
-	if v := i.Done; v != nil {
-		m.SetDone(*v)
+	if v := i.CreatedAt; v != nil {
+		m.SetCreatedAt(*v)
+	}
+	if v := i.UpdatedAt; v != nil {
+		m.SetUpdatedAt(*v)
 	}
 }
 
-// SetInput applies the change-set in the CreateTodoInput on the TodoCreate builder.
-func (c *TodoCreate) SetInput(i CreateTodoInput) *TodoCreate {
+// SetInput applies the change-set in the CreateAccountInput on the AccountCreate builder.
+func (c *AccountCreate) SetInput(i CreateAccountInput) *AccountCreate {
 	i.Mutate(c.Mutation())
 	return c
 }
 
-// UpdateTodoInput represents a mutation input for updating todos.
-type UpdateTodoInput struct {
-	Name  *string
-	Email *string
-	Done  *bool
+// UpdateAccountInput represents a mutation input for updating accounts.
+type UpdateAccountInput struct {
+	Name      *string
+	Email     *string
+	CreatedAt *time.Time
+	UpdatedAt *time.Time
 }
 
-// Mutate applies the UpdateTodoInput on the TodoMutation builder.
-func (i *UpdateTodoInput) Mutate(m *TodoMutation) {
+// Mutate applies the UpdateAccountInput on the AccountMutation builder.
+func (i *UpdateAccountInput) Mutate(m *AccountMutation) {
 	if v := i.Name; v != nil {
 		m.SetName(*v)
 	}
 	if v := i.Email; v != nil {
 		m.SetEmail(*v)
 	}
-	if v := i.Done; v != nil {
-		m.SetDone(*v)
+	if v := i.CreatedAt; v != nil {
+		m.SetCreatedAt(*v)
+	}
+	if v := i.UpdatedAt; v != nil {
+		m.SetUpdatedAt(*v)
 	}
 }
 
-// SetInput applies the change-set in the UpdateTodoInput on the TodoUpdate builder.
-func (c *TodoUpdate) SetInput(i UpdateTodoInput) *TodoUpdate {
+// SetInput applies the change-set in the UpdateAccountInput on the AccountUpdate builder.
+func (c *AccountUpdate) SetInput(i UpdateAccountInput) *AccountUpdate {
 	i.Mutate(c.Mutation())
 	return c
 }
 
-// SetInput applies the change-set in the UpdateTodoInput on the TodoUpdateOne builder.
-func (c *TodoUpdateOne) SetInput(i UpdateTodoInput) *TodoUpdateOne {
+// SetInput applies the change-set in the UpdateAccountInput on the AccountUpdateOne builder.
+func (c *AccountUpdateOne) SetInput(i UpdateAccountInput) *AccountUpdateOne {
 	i.Mutate(c.Mutation())
 	return c
 }

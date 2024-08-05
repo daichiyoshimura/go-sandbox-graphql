@@ -5,7 +5,7 @@ package ent
 import (
 	"context"
 	"fmt"
-	"sandbox-gql/ent/todo"
+	"sandbox-gql/ent/account"
 	"sync"
 	"sync/atomic"
 
@@ -23,10 +23,10 @@ type Noder interface {
 	IsNode()
 }
 
-var todoImplementors = []string{"Todo", "Node"}
+var accountImplementors = []string{"Account", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (*Todo) IsNode() {}
+func (*Account) IsNode() {}
 
 var errNodeInvalidID = &NotFoundError{"node"}
 
@@ -86,11 +86,11 @@ func (c *Client) Noder(ctx context.Context, id int, opts ...NodeOption) (_ Noder
 
 func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error) {
 	switch table {
-	case todo.Table:
-		query := c.Todo.Query().
-			Where(todo.ID(id))
+	case account.Table:
+		query := c.Account.Query().
+			Where(account.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
-			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, todoImplementors...); err != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, accountImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -168,10 +168,10 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		idmap[id] = append(idmap[id], &noders[i])
 	}
 	switch table {
-	case todo.Table:
-		query := c.Todo.Query().
-			Where(todo.IDIn(ids...))
-		query, err := query.CollectFields(ctx, todoImplementors...)
+	case account.Table:
+		query := c.Account.Query().
+			Where(account.IDIn(ids...))
+		query, err := query.CollectFields(ctx, accountImplementors...)
 		if err != nil {
 			return nil, err
 		}

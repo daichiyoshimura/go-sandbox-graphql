@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"sandbox-gql/ent/todo"
+	"sandbox-gql/ent/account"
 	"sync"
 
 	"entgo.io/ent"
@@ -73,7 +73,7 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			todo.Table: todo.ValidColumn,
+			account.Table: account.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

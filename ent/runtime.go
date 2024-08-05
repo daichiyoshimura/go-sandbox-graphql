@@ -3,21 +3,40 @@
 package ent
 
 import (
+	"sandbox-gql/ent/account"
 	"sandbox-gql/ent/schema"
-	"sandbox-gql/ent/todo"
+	"time"
 )
 
 // The init function reads all schema descriptors with runtime code
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
-	todoFields := schema.Todo{}.Fields()
-	_ = todoFields
-	// todoDescEmail is the schema descriptor for email field.
-	todoDescEmail := todoFields[1].Descriptor()
-	// todo.EmailValidator is a validator for the "email" field. It is called by the builders before save.
-	todo.EmailValidator = func() func(string) error {
-		validators := todoDescEmail.Validators
+	accountFields := schema.Account{}.Fields()
+	_ = accountFields
+	// accountDescName is the schema descriptor for name field.
+	accountDescName := accountFields[0].Descriptor()
+	// account.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	account.NameValidator = func() func(string) error {
+		validators := accountDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// accountDescEmail is the schema descriptor for email field.
+	accountDescEmail := accountFields[1].Descriptor()
+	// account.EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	account.EmailValidator = func() func(string) error {
+		validators := accountDescEmail.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),
@@ -31,8 +50,12 @@ func init() {
 			return nil
 		}
 	}()
-	// todoDescDone is the schema descriptor for done field.
-	todoDescDone := todoFields[2].Descriptor()
-	// todo.DefaultDone holds the default value on creation for the done field.
-	todo.DefaultDone = todoDescDone.Default.(bool)
+	// accountDescCreatedAt is the schema descriptor for created_at field.
+	accountDescCreatedAt := accountFields[2].Descriptor()
+	// account.DefaultCreatedAt holds the default value on creation for the created_at field.
+	account.DefaultCreatedAt = accountDescCreatedAt.Default.(time.Time)
+	// accountDescUpdatedAt is the schema descriptor for updated_at field.
+	accountDescUpdatedAt := accountFields[3].Descriptor()
+	// account.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	account.DefaultUpdatedAt = accountDescUpdatedAt.Default.(time.Time)
 }

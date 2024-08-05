@@ -4,46 +4,52 @@ package ent
 
 import (
 	"context"
-	"sandbox-gql/ent/todo"
+	"sandbox-gql/ent/account"
 
+	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql"
 )
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (t *TodoQuery) CollectFields(ctx context.Context, satisfies ...string) (*TodoQuery, error) {
+func (a *AccountQuery) CollectFields(ctx context.Context, satisfies ...string) (*AccountQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return t, nil
+		return a, nil
 	}
-	if err := t.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := a.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return t, nil
+	return a, nil
 }
 
-func (t *TodoQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (a *AccountQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
-		fieldSeen      = make(map[string]struct{}, len(todo.Columns))
-		selectedFields = []string{todo.FieldID}
+		fieldSeen      = make(map[string]struct{}, len(account.Columns))
+		selectedFields = []string{account.FieldID}
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
 		case "name":
-			if _, ok := fieldSeen[todo.FieldName]; !ok {
-				selectedFields = append(selectedFields, todo.FieldName)
-				fieldSeen[todo.FieldName] = struct{}{}
+			if _, ok := fieldSeen[account.FieldName]; !ok {
+				selectedFields = append(selectedFields, account.FieldName)
+				fieldSeen[account.FieldName] = struct{}{}
 			}
 		case "email":
-			if _, ok := fieldSeen[todo.FieldEmail]; !ok {
-				selectedFields = append(selectedFields, todo.FieldEmail)
-				fieldSeen[todo.FieldEmail] = struct{}{}
+			if _, ok := fieldSeen[account.FieldEmail]; !ok {
+				selectedFields = append(selectedFields, account.FieldEmail)
+				fieldSeen[account.FieldEmail] = struct{}{}
 			}
-		case "done":
-			if _, ok := fieldSeen[todo.FieldDone]; !ok {
-				selectedFields = append(selectedFields, todo.FieldDone)
-				fieldSeen[todo.FieldDone] = struct{}{}
+		case "createdAt":
+			if _, ok := fieldSeen[account.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, account.FieldCreatedAt)
+				fieldSeen[account.FieldCreatedAt] = struct{}{}
+			}
+		case "updatedAt":
+			if _, ok := fieldSeen[account.FieldUpdatedAt]; !ok {
+				selectedFields = append(selectedFields, account.FieldUpdatedAt)
+				fieldSeen[account.FieldUpdatedAt] = struct{}{}
 			}
 		case "id":
 		case "__typename":
@@ -52,19 +58,19 @@ func (t *TodoQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 		}
 	}
 	if !unknownSeen {
-		t.Select(selectedFields...)
+		a.Select(selectedFields...)
 	}
 	return nil
 }
 
-type todoPaginateArgs struct {
+type accountPaginateArgs struct {
 	first, last   *int
 	after, before *Cursor
-	opts          []TodoPaginateOption
+	opts          []AccountPaginateOption
 }
 
-func newTodoPaginateArgs(rv map[string]any) *todoPaginateArgs {
-	args := &todoPaginateArgs{}
+func newAccountPaginateArgs(rv map[string]any) *accountPaginateArgs {
+	args := &accountPaginateArgs{}
 	if rv == nil {
 		return args
 	}
@@ -80,8 +86,30 @@ func newTodoPaginateArgs(rv map[string]any) *todoPaginateArgs {
 	if v := rv[beforeField]; v != nil {
 		args.before = v.(*Cursor)
 	}
-	if v, ok := rv[whereField].(*TodoWhereInput); ok {
-		args.opts = append(args.opts, WithTodoFilter(v.Filter))
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]any:
+			var (
+				err1, err2 error
+				order      = &AccountOrder{Field: &AccountOrderField{}, Direction: entgql.OrderDirectionAsc}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithAccountOrder(order))
+			}
+		case *AccountOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithAccountOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*AccountWhereInput); ok {
+		args.opts = append(args.opts, WithAccountFilter(v.Filter))
 	}
 	return args
 }

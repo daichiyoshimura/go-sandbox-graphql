@@ -5,16 +5,17 @@ package ent
 import (
 	"errors"
 	"fmt"
+	"sandbox-gql/ent/account"
 	"sandbox-gql/ent/predicate"
-	"sandbox-gql/ent/todo"
+	"time"
 )
 
-// TodoWhereInput represents a where input for filtering Todo queries.
-type TodoWhereInput struct {
-	Predicates []predicate.Todo  `json:"-"`
-	Not        *TodoWhereInput   `json:"not,omitempty"`
-	Or         []*TodoWhereInput `json:"or,omitempty"`
-	And        []*TodoWhereInput `json:"and,omitempty"`
+// AccountWhereInput represents a where input for filtering Account queries.
+type AccountWhereInput struct {
+	Predicates []predicate.Account  `json:"-"`
+	Not        *AccountWhereInput   `json:"not,omitempty"`
+	Or         []*AccountWhereInput `json:"or,omitempty"`
+	And        []*AccountWhereInput `json:"and,omitempty"`
 
 	// "id" field predicates.
 	ID      *int  `json:"id,omitempty"`
@@ -56,24 +57,40 @@ type TodoWhereInput struct {
 	EmailEqualFold    *string  `json:"emailEqualFold,omitempty"`
 	EmailContainsFold *string  `json:"emailContainsFold,omitempty"`
 
-	// "done" field predicates.
-	Done    *bool `json:"done,omitempty"`
-	DoneNEQ *bool `json:"doneNEQ,omitempty"`
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "updated_at" field predicates.
+	UpdatedAt      *time.Time  `json:"updatedAt,omitempty"`
+	UpdatedAtNEQ   *time.Time  `json:"updatedAtNEQ,omitempty"`
+	UpdatedAtIn    []time.Time `json:"updatedAtIn,omitempty"`
+	UpdatedAtNotIn []time.Time `json:"updatedAtNotIn,omitempty"`
+	UpdatedAtGT    *time.Time  `json:"updatedAtGT,omitempty"`
+	UpdatedAtGTE   *time.Time  `json:"updatedAtGTE,omitempty"`
+	UpdatedAtLT    *time.Time  `json:"updatedAtLT,omitempty"`
+	UpdatedAtLTE   *time.Time  `json:"updatedAtLTE,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
-func (i *TodoWhereInput) AddPredicates(predicates ...predicate.Todo) {
+func (i *AccountWhereInput) AddPredicates(predicates ...predicate.Account) {
 	i.Predicates = append(i.Predicates, predicates...)
 }
 
-// Filter applies the TodoWhereInput filter on the TodoQuery builder.
-func (i *TodoWhereInput) Filter(q *TodoQuery) (*TodoQuery, error) {
+// Filter applies the AccountWhereInput filter on the AccountQuery builder.
+func (i *AccountWhereInput) Filter(q *AccountQuery) (*AccountQuery, error) {
 	if i == nil {
 		return q, nil
 	}
 	p, err := i.P()
 	if err != nil {
-		if err == ErrEmptyTodoWhereInput {
+		if err == ErrEmptyAccountWhereInput {
 			return q, nil
 		}
 		return nil, err
@@ -81,19 +98,19 @@ func (i *TodoWhereInput) Filter(q *TodoQuery) (*TodoQuery, error) {
 	return q.Where(p), nil
 }
 
-// ErrEmptyTodoWhereInput is returned in case the TodoWhereInput is empty.
-var ErrEmptyTodoWhereInput = errors.New("ent: empty predicate TodoWhereInput")
+// ErrEmptyAccountWhereInput is returned in case the AccountWhereInput is empty.
+var ErrEmptyAccountWhereInput = errors.New("ent: empty predicate AccountWhereInput")
 
-// P returns a predicate for filtering todos.
+// P returns a predicate for filtering accounts.
 // An error is returned if the input is empty or invalid.
-func (i *TodoWhereInput) P() (predicate.Todo, error) {
-	var predicates []predicate.Todo
+func (i *AccountWhereInput) P() (predicate.Account, error) {
+	var predicates []predicate.Account
 	if i.Not != nil {
 		p, err := i.Not.P()
 		if err != nil {
 			return nil, fmt.Errorf("%w: field 'not'", err)
 		}
-		predicates = append(predicates, todo.Not(p))
+		predicates = append(predicates, account.Not(p))
 	}
 	switch n := len(i.Or); {
 	case n == 1:
@@ -103,7 +120,7 @@ func (i *TodoWhereInput) P() (predicate.Todo, error) {
 		}
 		predicates = append(predicates, p)
 	case n > 1:
-		or := make([]predicate.Todo, 0, n)
+		or := make([]predicate.Account, 0, n)
 		for _, w := range i.Or {
 			p, err := w.P()
 			if err != nil {
@@ -111,7 +128,7 @@ func (i *TodoWhereInput) P() (predicate.Todo, error) {
 			}
 			or = append(or, p)
 		}
-		predicates = append(predicates, todo.Or(or...))
+		predicates = append(predicates, account.Or(or...))
 	}
 	switch n := len(i.And); {
 	case n == 1:
@@ -121,7 +138,7 @@ func (i *TodoWhereInput) P() (predicate.Todo, error) {
 		}
 		predicates = append(predicates, p)
 	case n > 1:
-		and := make([]predicate.Todo, 0, n)
+		and := make([]predicate.Account, 0, n)
 		for _, w := range i.And {
 			p, err := w.P()
 			if err != nil {
@@ -129,124 +146,166 @@ func (i *TodoWhereInput) P() (predicate.Todo, error) {
 			}
 			and = append(and, p)
 		}
-		predicates = append(predicates, todo.And(and...))
+		predicates = append(predicates, account.And(and...))
 	}
 	predicates = append(predicates, i.Predicates...)
 	if i.ID != nil {
-		predicates = append(predicates, todo.IDEQ(*i.ID))
+		predicates = append(predicates, account.IDEQ(*i.ID))
 	}
 	if i.IDNEQ != nil {
-		predicates = append(predicates, todo.IDNEQ(*i.IDNEQ))
+		predicates = append(predicates, account.IDNEQ(*i.IDNEQ))
 	}
 	if len(i.IDIn) > 0 {
-		predicates = append(predicates, todo.IDIn(i.IDIn...))
+		predicates = append(predicates, account.IDIn(i.IDIn...))
 	}
 	if len(i.IDNotIn) > 0 {
-		predicates = append(predicates, todo.IDNotIn(i.IDNotIn...))
+		predicates = append(predicates, account.IDNotIn(i.IDNotIn...))
 	}
 	if i.IDGT != nil {
-		predicates = append(predicates, todo.IDGT(*i.IDGT))
+		predicates = append(predicates, account.IDGT(*i.IDGT))
 	}
 	if i.IDGTE != nil {
-		predicates = append(predicates, todo.IDGTE(*i.IDGTE))
+		predicates = append(predicates, account.IDGTE(*i.IDGTE))
 	}
 	if i.IDLT != nil {
-		predicates = append(predicates, todo.IDLT(*i.IDLT))
+		predicates = append(predicates, account.IDLT(*i.IDLT))
 	}
 	if i.IDLTE != nil {
-		predicates = append(predicates, todo.IDLTE(*i.IDLTE))
+		predicates = append(predicates, account.IDLTE(*i.IDLTE))
 	}
 	if i.Name != nil {
-		predicates = append(predicates, todo.NameEQ(*i.Name))
+		predicates = append(predicates, account.NameEQ(*i.Name))
 	}
 	if i.NameNEQ != nil {
-		predicates = append(predicates, todo.NameNEQ(*i.NameNEQ))
+		predicates = append(predicates, account.NameNEQ(*i.NameNEQ))
 	}
 	if len(i.NameIn) > 0 {
-		predicates = append(predicates, todo.NameIn(i.NameIn...))
+		predicates = append(predicates, account.NameIn(i.NameIn...))
 	}
 	if len(i.NameNotIn) > 0 {
-		predicates = append(predicates, todo.NameNotIn(i.NameNotIn...))
+		predicates = append(predicates, account.NameNotIn(i.NameNotIn...))
 	}
 	if i.NameGT != nil {
-		predicates = append(predicates, todo.NameGT(*i.NameGT))
+		predicates = append(predicates, account.NameGT(*i.NameGT))
 	}
 	if i.NameGTE != nil {
-		predicates = append(predicates, todo.NameGTE(*i.NameGTE))
+		predicates = append(predicates, account.NameGTE(*i.NameGTE))
 	}
 	if i.NameLT != nil {
-		predicates = append(predicates, todo.NameLT(*i.NameLT))
+		predicates = append(predicates, account.NameLT(*i.NameLT))
 	}
 	if i.NameLTE != nil {
-		predicates = append(predicates, todo.NameLTE(*i.NameLTE))
+		predicates = append(predicates, account.NameLTE(*i.NameLTE))
 	}
 	if i.NameContains != nil {
-		predicates = append(predicates, todo.NameContains(*i.NameContains))
+		predicates = append(predicates, account.NameContains(*i.NameContains))
 	}
 	if i.NameHasPrefix != nil {
-		predicates = append(predicates, todo.NameHasPrefix(*i.NameHasPrefix))
+		predicates = append(predicates, account.NameHasPrefix(*i.NameHasPrefix))
 	}
 	if i.NameHasSuffix != nil {
-		predicates = append(predicates, todo.NameHasSuffix(*i.NameHasSuffix))
+		predicates = append(predicates, account.NameHasSuffix(*i.NameHasSuffix))
 	}
 	if i.NameEqualFold != nil {
-		predicates = append(predicates, todo.NameEqualFold(*i.NameEqualFold))
+		predicates = append(predicates, account.NameEqualFold(*i.NameEqualFold))
 	}
 	if i.NameContainsFold != nil {
-		predicates = append(predicates, todo.NameContainsFold(*i.NameContainsFold))
+		predicates = append(predicates, account.NameContainsFold(*i.NameContainsFold))
 	}
 	if i.Email != nil {
-		predicates = append(predicates, todo.EmailEQ(*i.Email))
+		predicates = append(predicates, account.EmailEQ(*i.Email))
 	}
 	if i.EmailNEQ != nil {
-		predicates = append(predicates, todo.EmailNEQ(*i.EmailNEQ))
+		predicates = append(predicates, account.EmailNEQ(*i.EmailNEQ))
 	}
 	if len(i.EmailIn) > 0 {
-		predicates = append(predicates, todo.EmailIn(i.EmailIn...))
+		predicates = append(predicates, account.EmailIn(i.EmailIn...))
 	}
 	if len(i.EmailNotIn) > 0 {
-		predicates = append(predicates, todo.EmailNotIn(i.EmailNotIn...))
+		predicates = append(predicates, account.EmailNotIn(i.EmailNotIn...))
 	}
 	if i.EmailGT != nil {
-		predicates = append(predicates, todo.EmailGT(*i.EmailGT))
+		predicates = append(predicates, account.EmailGT(*i.EmailGT))
 	}
 	if i.EmailGTE != nil {
-		predicates = append(predicates, todo.EmailGTE(*i.EmailGTE))
+		predicates = append(predicates, account.EmailGTE(*i.EmailGTE))
 	}
 	if i.EmailLT != nil {
-		predicates = append(predicates, todo.EmailLT(*i.EmailLT))
+		predicates = append(predicates, account.EmailLT(*i.EmailLT))
 	}
 	if i.EmailLTE != nil {
-		predicates = append(predicates, todo.EmailLTE(*i.EmailLTE))
+		predicates = append(predicates, account.EmailLTE(*i.EmailLTE))
 	}
 	if i.EmailContains != nil {
-		predicates = append(predicates, todo.EmailContains(*i.EmailContains))
+		predicates = append(predicates, account.EmailContains(*i.EmailContains))
 	}
 	if i.EmailHasPrefix != nil {
-		predicates = append(predicates, todo.EmailHasPrefix(*i.EmailHasPrefix))
+		predicates = append(predicates, account.EmailHasPrefix(*i.EmailHasPrefix))
 	}
 	if i.EmailHasSuffix != nil {
-		predicates = append(predicates, todo.EmailHasSuffix(*i.EmailHasSuffix))
+		predicates = append(predicates, account.EmailHasSuffix(*i.EmailHasSuffix))
 	}
 	if i.EmailEqualFold != nil {
-		predicates = append(predicates, todo.EmailEqualFold(*i.EmailEqualFold))
+		predicates = append(predicates, account.EmailEqualFold(*i.EmailEqualFold))
 	}
 	if i.EmailContainsFold != nil {
-		predicates = append(predicates, todo.EmailContainsFold(*i.EmailContainsFold))
+		predicates = append(predicates, account.EmailContainsFold(*i.EmailContainsFold))
 	}
-	if i.Done != nil {
-		predicates = append(predicates, todo.DoneEQ(*i.Done))
+	if i.CreatedAt != nil {
+		predicates = append(predicates, account.CreatedAtEQ(*i.CreatedAt))
 	}
-	if i.DoneNEQ != nil {
-		predicates = append(predicates, todo.DoneNEQ(*i.DoneNEQ))
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, account.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, account.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, account.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, account.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, account.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, account.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, account.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.UpdatedAt != nil {
+		predicates = append(predicates, account.UpdatedAtEQ(*i.UpdatedAt))
+	}
+	if i.UpdatedAtNEQ != nil {
+		predicates = append(predicates, account.UpdatedAtNEQ(*i.UpdatedAtNEQ))
+	}
+	if len(i.UpdatedAtIn) > 0 {
+		predicates = append(predicates, account.UpdatedAtIn(i.UpdatedAtIn...))
+	}
+	if len(i.UpdatedAtNotIn) > 0 {
+		predicates = append(predicates, account.UpdatedAtNotIn(i.UpdatedAtNotIn...))
+	}
+	if i.UpdatedAtGT != nil {
+		predicates = append(predicates, account.UpdatedAtGT(*i.UpdatedAtGT))
+	}
+	if i.UpdatedAtGTE != nil {
+		predicates = append(predicates, account.UpdatedAtGTE(*i.UpdatedAtGTE))
+	}
+	if i.UpdatedAtLT != nil {
+		predicates = append(predicates, account.UpdatedAtLT(*i.UpdatedAtLT))
+	}
+	if i.UpdatedAtLTE != nil {
+		predicates = append(predicates, account.UpdatedAtLTE(*i.UpdatedAtLTE))
 	}
 
 	switch len(predicates) {
 	case 0:
-		return nil, ErrEmptyTodoWhereInput
+		return nil, ErrEmptyAccountWhereInput
 	case 1:
 		return predicates[0], nil
 	default:
-		return todo.And(predicates...), nil
+		return account.And(predicates...), nil
 	}
 }
