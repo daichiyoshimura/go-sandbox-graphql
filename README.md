@@ -1,4 +1,4 @@
-# go-graphql
+# sandbox-go-graphql
 
 ## How to create new schema
 
@@ -14,7 +14,7 @@ See `ent/schema/${new-schema}.go`
 
 ### Step3. Define mutations of the schema
 
-- create `graph/schema/${new-schema}.graphql`
+Create `graph/schema/${new-schema}.graphql`
 
 ### Step3. Generate graph code
 
