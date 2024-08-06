@@ -1,10 +1,12 @@
 package env
 
+import "strconv"
+
 type Redis struct {
 	host     string
 	port     string
 	password string
-	name     string
+	db       int
 }
 
 func loadRedis() (*Redis, error) {
@@ -23,7 +25,11 @@ func loadRedis() (*Redis, error) {
 		return nil, err
 	}
 
-	name, err := load("REDIS_NAME")
+	db, err := load("REDIS_DB")
+	if err != nil {
+		return nil, err
+	}
+	intDb, err := strconv.Atoi(db)
 	if err != nil {
 		return nil, err
 	}
@@ -32,22 +38,22 @@ func loadRedis() (*Redis, error) {
 		host:     host,
 		port:     port,
 		password: password,
-		name:     name,
+		db:       intDb,
 	}, nil
 }
 
-func (db *Redis) Host() string {
-	return db.host
+func (r *Redis) Host() string {
+	return r.host
 }
 
-func (db *Redis) Port() string {
-	return db.port
+func (r *Redis) Port() string {
+	return r.port
 }
 
-func (db *Redis) Password() string {
-	return db.password
+func (r *Redis) Password() string {
+	return r.password
 }
 
-func (db *Redis) Name() string {
-	return db.name
+func (r *Redis) DB() int {
+	return r.db
 }
