@@ -20,4 +20,4 @@ go generate ./ent
 
 ### Step4. Implement resolvers
 
-See `graph/resolver.go, graph/ent.resolver.go`
+See `graph/resolver.go, graph/ent.resolver.go, graph/account.resolver.go`

@@ -7,10 +7,8 @@ package graph
 import (
 	"context"
 	"fmt"
-	"log"
 	"sandbox-gql/ent"
 	"sandbox-gql/graph/model"
-	"strconv"
 )
 
 // Node is the resolver for the node field.
@@ -25,19 +23,8 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []string) ([]ent.Noder, e
 
 // Accounts is the resolver for the accounts field.
 func (r *queryResolver) Accounts(ctx context.Context) ([]*model.Account, error) {
-	entAccounts, err := r.client.Account.Query().All(ctx)
-	if err != nil {
-		log.Fatalf("failed querying todos: %v", err)
-	}
-	modelAccounts := make([]*model.Account, len(entAccounts))
-	for i, entAccount := range entAccounts {
-		modelAccounts[i] = &model.Account{
-			ID:    strconv.Itoa(entAccount.ID),
-			Name:  entAccount.Name,
-			Email: entAccount.Email,
-		}
-	}
-	return modelAccounts, nil
+	
+	panic(fmt.Errorf("not implemented: Accounts - accounts"))
 }
 
 // Query returns QueryResolver implementation.
