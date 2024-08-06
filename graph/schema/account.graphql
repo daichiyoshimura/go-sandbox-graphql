@@ -2,3 +2,4 @@ type Mutation {
     createAccount(input: CreateAccountInput!): Account!
     updateAccount(id: ID!, input: UpdateAccountInput!): Account!
 }
+scalar Time

@@ -53,9 +53,9 @@ func init() {
 	// accountDescCreatedAt is the schema descriptor for created_at field.
 	accountDescCreatedAt := accountFields[2].Descriptor()
 	// account.DefaultCreatedAt holds the default value on creation for the created_at field.
-	account.DefaultCreatedAt = accountDescCreatedAt.Default.(time.Time)
+	account.DefaultCreatedAt = accountDescCreatedAt.Default.(func() time.Time)
 	// accountDescUpdatedAt is the schema descriptor for updated_at field.
 	accountDescUpdatedAt := accountFields[3].Descriptor()
 	// account.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	account.DefaultUpdatedAt = accountDescUpdatedAt.Default.(time.Time)
+	account.DefaultUpdatedAt = accountDescUpdatedAt.Default.(func() time.Time)
 }

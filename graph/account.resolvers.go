@@ -7,12 +7,26 @@ package graph
 import (
 	"context"
 	"fmt"
+	"sandbox-gql/ent"
 	"sandbox-gql/graph/model"
+	"strconv"
 )
 
 // CreateAccount is the resolver for the createAccount field.
 func (r *mutationResolver) CreateAccount(ctx context.Context, input model.CreateAccountInput) (*model.Account, error) {
-	panic(fmt.Errorf("not implemented: CreateAccount - createAccount"))
+	entInput := ent.CreateAccountInput{
+		Name:  input.Name,
+		Email: input.Email,
+	}
+	entAccount, err := r.client.Account.Create().SetInput(entInput).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &model.Account{
+		ID:    strconv.Itoa(entAccount.ID),
+		Name:  entAccount.Name,
+		Email: entAccount.Email,
+	}, nil
 }
 
 // UpdateAccount is the resolver for the updateAccount field.

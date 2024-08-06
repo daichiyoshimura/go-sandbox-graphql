@@ -19,8 +19,8 @@ func (Account) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").NotEmpty().MaxLen(255).Annotations(entgql.OrderField("ID")),
 		field.String("email").NotEmpty().MaxLen(255).Annotations(entgql.OrderField("EMAIL")),
-		field.Time("created_at").Default(time.Now()),
-		field.Time("updated_at").Default(time.Now()),
+		field.Time("created_at").Default(time.Now),
+		field.Time("updated_at").Default(time.Now),
 	}
 }
 
