@@ -10,7 +10,7 @@ import (
 )
 
 type Account struct {
-	ID        string    `json:"id"`
+	ID        int       `json:"id"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"createdAt"`
@@ -35,14 +35,14 @@ type AccountWhereInput struct {
 	And []*AccountWhereInput `json:"and,omitempty"`
 	Or  []*AccountWhereInput `json:"or,omitempty"`
 	// id field predicates
-	ID      *string  `json:"id,omitempty"`
-	IDNeq   *string  `json:"idNEQ,omitempty"`
-	IDIn    []string `json:"idIn,omitempty"`
-	IDNotIn []string `json:"idNotIn,omitempty"`
-	IDGt    *string  `json:"idGT,omitempty"`
-	IDGte   *string  `json:"idGTE,omitempty"`
-	IDLt    *string  `json:"idLT,omitempty"`
-	IDLte   *string  `json:"idLTE,omitempty"`
+	ID      *int  `json:"id,omitempty"`
+	IDNeq   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGt    *int  `json:"idGT,omitempty"`
+	IDGte   *int  `json:"idGTE,omitempty"`
+	IDLt    *int  `json:"idLT,omitempty"`
+	IDLte   *int  `json:"idLTE,omitempty"`
 	// name field predicates
 	Name             *string  `json:"name,omitempty"`
 	NameNeq          *string  `json:"nameNEQ,omitempty"`
@@ -101,7 +101,7 @@ type CreateAccountInput struct {
 	Email     string     `json:"email"`
 	CreatedAt *time.Time `json:"createdAt,omitempty"`
 	UpdatedAt *time.Time `json:"updatedAt,omitempty"`
-	ItemIDs   []string   `json:"itemIDs,omitempty"`
+	ItemIDs   []int      `json:"itemIDs,omitempty"`
 }
 
 // CreateItemInput is used for create Item object.
@@ -111,11 +111,11 @@ type CreateItemInput struct {
 	Price     *int       `json:"price,omitempty"`
 	CreatedAt *time.Time `json:"createdAt,omitempty"`
 	UpdatedAt *time.Time `json:"updatedAt,omitempty"`
-	AccountID *string    `json:"accountID,omitempty"`
+	AccountID *int       `json:"accountID,omitempty"`
 }
 
 type Item struct {
-	ID        string    `json:"id"`
+	ID        int       `json:"id"`
 	Name      string    `json:"name"`
 	Price     int       `json:"price"`
 	CreatedAt time.Time `json:"createdAt"`
@@ -132,14 +132,14 @@ type ItemWhereInput struct {
 	And []*ItemWhereInput `json:"and,omitempty"`
 	Or  []*ItemWhereInput `json:"or,omitempty"`
 	// id field predicates
-	ID      *string  `json:"id,omitempty"`
-	IDNeq   *string  `json:"idNEQ,omitempty"`
-	IDIn    []string `json:"idIn,omitempty"`
-	IDNotIn []string `json:"idNotIn,omitempty"`
-	IDGt    *string  `json:"idGT,omitempty"`
-	IDGte   *string  `json:"idGTE,omitempty"`
-	IDLt    *string  `json:"idLT,omitempty"`
-	IDLte   *string  `json:"idLTE,omitempty"`
+	ID      *int  `json:"id,omitempty"`
+	IDNeq   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGt    *int  `json:"idGT,omitempty"`
+	IDGte   *int  `json:"idGTE,omitempty"`
+	IDLt    *int  `json:"idLT,omitempty"`
+	IDLte   *int  `json:"idLTE,omitempty"`
 	// name field predicates
 	Name             *string  `json:"name,omitempty"`
 	NameNeq          *string  `json:"nameNEQ,omitempty"`
@@ -212,8 +212,8 @@ type UpdateAccountInput struct {
 	Email         *string    `json:"email,omitempty"`
 	CreatedAt     *time.Time `json:"createdAt,omitempty"`
 	UpdatedAt     *time.Time `json:"updatedAt,omitempty"`
-	AddItemIDs    []string   `json:"addItemIDs,omitempty"`
-	RemoveItemIDs []string   `json:"removeItemIDs,omitempty"`
+	AddItemIDs    []int      `json:"addItemIDs,omitempty"`
+	RemoveItemIDs []int      `json:"removeItemIDs,omitempty"`
 	ClearItems    *bool      `json:"clearItems,omitempty"`
 }
 
@@ -224,7 +224,7 @@ type UpdateItemInput struct {
 	Price        *int       `json:"price,omitempty"`
 	CreatedAt    *time.Time `json:"createdAt,omitempty"`
 	UpdatedAt    *time.Time `json:"updatedAt,omitempty"`
-	AccountID    *string    `json:"accountID,omitempty"`
+	AccountID    *int       `json:"accountID,omitempty"`
 	ClearAccount *bool      `json:"clearAccount,omitempty"`
 }
 
@@ -232,18 +232,18 @@ type UpdateItemInput struct {
 type AccountOrderField string
 
 const (
-	AccountOrderFieldID    AccountOrderField = "ID"
+	AccountOrderFieldName  AccountOrderField = "NAME"
 	AccountOrderFieldEmail AccountOrderField = "EMAIL"
 )
 
 var AllAccountOrderField = []AccountOrderField{
-	AccountOrderFieldID,
+	AccountOrderFieldName,
 	AccountOrderFieldEmail,
 }
 
 func (e AccountOrderField) IsValid() bool {
 	switch e {
-	case AccountOrderFieldID, AccountOrderFieldEmail:
+	case AccountOrderFieldName, AccountOrderFieldEmail:
 		return true
 	}
 	return false

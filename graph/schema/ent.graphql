@@ -25,7 +25,7 @@ input AccountOrder {
 Properties by which Account connections can be ordered.
 """
 enum AccountOrderField {
-  ID
+  NAME
   EMAIL
 }
 """

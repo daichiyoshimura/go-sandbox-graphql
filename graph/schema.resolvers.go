@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"sandbox-gql/ent"
 	"sandbox-gql/graph/model"
-	"strconv"
 )
 
 // CreateAccount is the resolver for the createAccount field.
@@ -23,36 +22,46 @@ func (r *mutationResolver) CreateAccount(ctx context.Context, input model.Create
 		return nil, err
 	}
 	return &model.Account{
-		ID:    strconv.Itoa(entAccount.ID),
+		ID:    entAccount.ID,
 		Name:  entAccount.Name,
 		Email: entAccount.Email,
 	}, nil
 }
 
 // UpdateAccount is the resolver for the updateAccount field.
-func (r *mutationResolver) UpdateAccount(ctx context.Context, id string, input model.UpdateAccountInput) (*model.Account, error) {
+func (r *mutationResolver) UpdateAccount(ctx context.Context, id int, input model.UpdateAccountInput) (*model.Account, error) {
 	panic(fmt.Errorf("not implemented: UpdateAccount - updateAccount"))
 }
 
 // CreateItem is the resolver for the createItem field.
 func (r *mutationResolver) CreateItem(ctx context.Context, input model.CreateItemInput) (*model.Item, error) {
 	entInput := ent.CreateItemInput{
-		Name:  input.Name,
-		Price: input.Price,
+		Name:      input.Name,
+		Price:     input.Price,
+		AccountID: input.AccountID,
 	}
 	entItem, err := r.client.Item.Create().SetInput(entInput).Save(ctx)
 	if err != nil {
 		return nil, err
 	}
+	account, err := entItem.Account(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return &model.Item{
-		ID:    strconv.Itoa(entItem.ID),
+		ID:    entItem.ID,
 		Name:  entItem.Name,
 		Price: entItem.Price,
+		Account: &model.Account{
+			ID:    account.ID,
+			Name:  account.Name,
+			Email: account.Email,
+		},
 	}, nil
 }
 
 // UpdateItem is the resolver for the updateItem field.
-func (r *mutationResolver) UpdateItem(ctx context.Context, id string, input model.UpdateItemInput) (*model.Item, error) {
+func (r *mutationResolver) UpdateItem(ctx context.Context, id int, input model.UpdateItemInput) (*model.Item, error) {
 	panic(fmt.Errorf("not implemented: UpdateItem - updateItem"))
 }
 

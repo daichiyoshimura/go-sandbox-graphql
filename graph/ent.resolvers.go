@@ -9,16 +9,15 @@ import (
 	"fmt"
 	"sandbox-gql/ent"
 	"sandbox-gql/graph/model"
-	"strconv"
 )
 
 // Node is the resolver for the node field.
-func (r *queryResolver) Node(ctx context.Context, id string) (ent.Noder, error) {
+func (r *queryResolver) Node(ctx context.Context, id int) (ent.Noder, error) {
 	panic(fmt.Errorf("not implemented: Node - node"))
 }
 
 // Nodes is the resolver for the nodes field.
-func (r *queryResolver) Nodes(ctx context.Context, ids []string) ([]ent.Noder, error) {
+func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, error) {
 	panic(fmt.Errorf("not implemented: Nodes - nodes"))
 }
 
@@ -30,10 +29,26 @@ func (r *queryResolver) Accounts(ctx context.Context) ([]*model.Account, error) 
 	}
 	modelAccounts := make([]*model.Account, len(entAccounts))
 	for i, entAccount := range entAccounts {
+
+		items, err := entAccount.Items(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		modelItems := make([]*model.Item, len(items))
+		for j, entItem := range items {
+			modelItems[j] = &model.Item{
+				ID:    entItem.ID,
+				Name:  entItem.Name,
+				Price: entItem.Price,
+			}
+		}
+
 		modelAccounts[i] = &model.Account{
-			ID:    strconv.Itoa(entAccount.ID),
+			ID:    entAccount.ID,
 			Name:  entAccount.Name,
 			Email: entAccount.Email,
+			Items: modelItems,
 		}
 	}
 	return modelAccounts, nil
@@ -48,7 +63,7 @@ func (r *queryResolver) Items(ctx context.Context) ([]*model.Item, error) {
 	modelItems := make([]*model.Item, len(entItems))
 	for i, entItem := range entItems {
 		modelItems[i] = &model.Item{
-			ID:    strconv.Itoa(entItem.ID),
+			ID:    entItem.ID,
 			Name:  entItem.Name,
 			Price: entItem.Price,
 		}

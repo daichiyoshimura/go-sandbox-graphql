@@ -18,7 +18,7 @@ type Account struct {
 // Fields of the Account.
 func (Account) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("name").NotEmpty().MaxLen(255).Annotations(entgql.OrderField("ID")),
+		field.String("name").NotEmpty().MaxLen(255).Annotations(entgql.OrderField("NAME")),
 		field.String("email").NotEmpty().MaxLen(255).Annotations(entgql.OrderField("EMAIL")),
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now),

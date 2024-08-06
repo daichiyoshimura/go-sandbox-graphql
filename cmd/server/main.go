@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"sandbox-gql/ent/migrate"
 	"sandbox-gql/internal/db"
 	"sandbox-gql/internal/env"
 	"sandbox-gql/internal/redis"
@@ -36,7 +37,7 @@ func main() {
 	defer dbClient.Close()
 
 	// database migration
-	if err := dbClient.Schema.Create(context.Background()); err != nil {
+	if err := dbClient.Schema.Create(context.Background(), migrate.WithDropIndex(true), migrate.WithDropColumn(true)); err != nil {
 		log.Fatalf("failed creating schema resources: %v", err)
 	}
 

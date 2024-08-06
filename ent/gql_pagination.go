@@ -343,7 +343,7 @@ func (f AccountOrderField) String() string {
 	var str string
 	switch f.column {
 	case AccountOrderFieldName.column:
-		str = "ID"
+		str = "NAME"
 	case AccountOrderFieldEmail.column:
 		str = "EMAIL"
 	}
@@ -362,7 +362,7 @@ func (f *AccountOrderField) UnmarshalGQL(v interface{}) error {
 		return fmt.Errorf("AccountOrderField %T must be a string", v)
 	}
 	switch str {
-	case "ID":
+	case "NAME":
 		*f = *AccountOrderFieldName
 	case "EMAIL":
 		*f = *AccountOrderFieldEmail
