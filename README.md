@@ -5,16 +5,16 @@
 ### Step1. Generate ent code
 
 ```zsh
-go run -mod=mod entgo.io/ent/cmd/ent new ${new-schema}
+go run -mod=mod entgo.io/ent/cmd/ent new ${NewSchema}
 ```
 
 ### Step2. Implement the schema
 
-See `ent/schema/${new-schema}.go`
+See `ent/schema/${new_schema}.go`
 
 ### Step3. Define mutations of the schema
 
-Create `graph/schema/${new-schema}.graphql`
+Create `graph/schema/${new_schema}.graphql`
 
 ### Step3. Generate graph code
 

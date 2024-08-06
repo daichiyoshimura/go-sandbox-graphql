@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sandbox-gql/ent/account"
+	"sandbox-gql/ent/item"
 	"sandbox-gql/ent/predicate"
 	"time"
 )
@@ -307,5 +308,339 @@ func (i *AccountWhereInput) P() (predicate.Account, error) {
 		return predicates[0], nil
 	default:
 		return account.And(predicates...), nil
+	}
+}
+
+// ItemWhereInput represents a where input for filtering Item queries.
+type ItemWhereInput struct {
+	Predicates []predicate.Item  `json:"-"`
+	Not        *ItemWhereInput   `json:"not,omitempty"`
+	Or         []*ItemWhereInput `json:"or,omitempty"`
+	And        []*ItemWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "price" field predicates.
+	Price      *int  `json:"price,omitempty"`
+	PriceNEQ   *int  `json:"priceNEQ,omitempty"`
+	PriceIn    []int `json:"priceIn,omitempty"`
+	PriceNotIn []int `json:"priceNotIn,omitempty"`
+	PriceGT    *int  `json:"priceGT,omitempty"`
+	PriceGTE   *int  `json:"priceGTE,omitempty"`
+	PriceLT    *int  `json:"priceLT,omitempty"`
+	PriceLTE   *int  `json:"priceLTE,omitempty"`
+
+	// "owner_account_id" field predicates.
+	OwnerAccountID             *string  `json:"ownerAccountID,omitempty"`
+	OwnerAccountIDNEQ          *string  `json:"ownerAccountIDNEQ,omitempty"`
+	OwnerAccountIDIn           []string `json:"ownerAccountIDIn,omitempty"`
+	OwnerAccountIDNotIn        []string `json:"ownerAccountIDNotIn,omitempty"`
+	OwnerAccountIDGT           *string  `json:"ownerAccountIDGT,omitempty"`
+	OwnerAccountIDGTE          *string  `json:"ownerAccountIDGTE,omitempty"`
+	OwnerAccountIDLT           *string  `json:"ownerAccountIDLT,omitempty"`
+	OwnerAccountIDLTE          *string  `json:"ownerAccountIDLTE,omitempty"`
+	OwnerAccountIDContains     *string  `json:"ownerAccountIDContains,omitempty"`
+	OwnerAccountIDHasPrefix    *string  `json:"ownerAccountIDHasPrefix,omitempty"`
+	OwnerAccountIDHasSuffix    *string  `json:"ownerAccountIDHasSuffix,omitempty"`
+	OwnerAccountIDEqualFold    *string  `json:"ownerAccountIDEqualFold,omitempty"`
+	OwnerAccountIDContainsFold *string  `json:"ownerAccountIDContainsFold,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "updated_at" field predicates.
+	UpdatedAt      *time.Time  `json:"updatedAt,omitempty"`
+	UpdatedAtNEQ   *time.Time  `json:"updatedAtNEQ,omitempty"`
+	UpdatedAtIn    []time.Time `json:"updatedAtIn,omitempty"`
+	UpdatedAtNotIn []time.Time `json:"updatedAtNotIn,omitempty"`
+	UpdatedAtGT    *time.Time  `json:"updatedAtGT,omitempty"`
+	UpdatedAtGTE   *time.Time  `json:"updatedAtGTE,omitempty"`
+	UpdatedAtLT    *time.Time  `json:"updatedAtLT,omitempty"`
+	UpdatedAtLTE   *time.Time  `json:"updatedAtLTE,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *ItemWhereInput) AddPredicates(predicates ...predicate.Item) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the ItemWhereInput filter on the ItemQuery builder.
+func (i *ItemWhereInput) Filter(q *ItemQuery) (*ItemQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyItemWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyItemWhereInput is returned in case the ItemWhereInput is empty.
+var ErrEmptyItemWhereInput = errors.New("ent: empty predicate ItemWhereInput")
+
+// P returns a predicate for filtering items.
+// An error is returned if the input is empty or invalid.
+func (i *ItemWhereInput) P() (predicate.Item, error) {
+	var predicates []predicate.Item
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, item.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Item, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, item.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Item, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, item.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, item.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, item.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, item.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, item.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, item.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, item.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, item.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, item.IDLTE(*i.IDLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, item.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, item.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, item.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, item.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, item.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, item.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, item.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, item.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, item.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, item.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, item.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, item.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, item.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.Price != nil {
+		predicates = append(predicates, item.PriceEQ(*i.Price))
+	}
+	if i.PriceNEQ != nil {
+		predicates = append(predicates, item.PriceNEQ(*i.PriceNEQ))
+	}
+	if len(i.PriceIn) > 0 {
+		predicates = append(predicates, item.PriceIn(i.PriceIn...))
+	}
+	if len(i.PriceNotIn) > 0 {
+		predicates = append(predicates, item.PriceNotIn(i.PriceNotIn...))
+	}
+	if i.PriceGT != nil {
+		predicates = append(predicates, item.PriceGT(*i.PriceGT))
+	}
+	if i.PriceGTE != nil {
+		predicates = append(predicates, item.PriceGTE(*i.PriceGTE))
+	}
+	if i.PriceLT != nil {
+		predicates = append(predicates, item.PriceLT(*i.PriceLT))
+	}
+	if i.PriceLTE != nil {
+		predicates = append(predicates, item.PriceLTE(*i.PriceLTE))
+	}
+	if i.OwnerAccountID != nil {
+		predicates = append(predicates, item.OwnerAccountIDEQ(*i.OwnerAccountID))
+	}
+	if i.OwnerAccountIDNEQ != nil {
+		predicates = append(predicates, item.OwnerAccountIDNEQ(*i.OwnerAccountIDNEQ))
+	}
+	if len(i.OwnerAccountIDIn) > 0 {
+		predicates = append(predicates, item.OwnerAccountIDIn(i.OwnerAccountIDIn...))
+	}
+	if len(i.OwnerAccountIDNotIn) > 0 {
+		predicates = append(predicates, item.OwnerAccountIDNotIn(i.OwnerAccountIDNotIn...))
+	}
+	if i.OwnerAccountIDGT != nil {
+		predicates = append(predicates, item.OwnerAccountIDGT(*i.OwnerAccountIDGT))
+	}
+	if i.OwnerAccountIDGTE != nil {
+		predicates = append(predicates, item.OwnerAccountIDGTE(*i.OwnerAccountIDGTE))
+	}
+	if i.OwnerAccountIDLT != nil {
+		predicates = append(predicates, item.OwnerAccountIDLT(*i.OwnerAccountIDLT))
+	}
+	if i.OwnerAccountIDLTE != nil {
+		predicates = append(predicates, item.OwnerAccountIDLTE(*i.OwnerAccountIDLTE))
+	}
+	if i.OwnerAccountIDContains != nil {
+		predicates = append(predicates, item.OwnerAccountIDContains(*i.OwnerAccountIDContains))
+	}
+	if i.OwnerAccountIDHasPrefix != nil {
+		predicates = append(predicates, item.OwnerAccountIDHasPrefix(*i.OwnerAccountIDHasPrefix))
+	}
+	if i.OwnerAccountIDHasSuffix != nil {
+		predicates = append(predicates, item.OwnerAccountIDHasSuffix(*i.OwnerAccountIDHasSuffix))
+	}
+	if i.OwnerAccountIDEqualFold != nil {
+		predicates = append(predicates, item.OwnerAccountIDEqualFold(*i.OwnerAccountIDEqualFold))
+	}
+	if i.OwnerAccountIDContainsFold != nil {
+		predicates = append(predicates, item.OwnerAccountIDContainsFold(*i.OwnerAccountIDContainsFold))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, item.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, item.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, item.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, item.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, item.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, item.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, item.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, item.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.UpdatedAt != nil {
+		predicates = append(predicates, item.UpdatedAtEQ(*i.UpdatedAt))
+	}
+	if i.UpdatedAtNEQ != nil {
+		predicates = append(predicates, item.UpdatedAtNEQ(*i.UpdatedAtNEQ))
+	}
+	if len(i.UpdatedAtIn) > 0 {
+		predicates = append(predicates, item.UpdatedAtIn(i.UpdatedAtIn...))
+	}
+	if len(i.UpdatedAtNotIn) > 0 {
+		predicates = append(predicates, item.UpdatedAtNotIn(i.UpdatedAtNotIn...))
+	}
+	if i.UpdatedAtGT != nil {
+		predicates = append(predicates, item.UpdatedAtGT(*i.UpdatedAtGT))
+	}
+	if i.UpdatedAtGTE != nil {
+		predicates = append(predicates, item.UpdatedAtGTE(*i.UpdatedAtGTE))
+	}
+	if i.UpdatedAtLT != nil {
+		predicates = append(predicates, item.UpdatedAtLT(*i.UpdatedAtLT))
+	}
+	if i.UpdatedAtLTE != nil {
+		predicates = append(predicates, item.UpdatedAtLTE(*i.UpdatedAtLTE))
+	}
+
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyItemWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return item.And(predicates...), nil
 	}
 }

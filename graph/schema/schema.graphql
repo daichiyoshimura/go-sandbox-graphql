@@ -1,4 +1,8 @@
+scalar Time
+
 type Mutation {
     createAccount(input: CreateAccountInput!): Account!
     updateAccount(id: ID!, input: UpdateAccountInput!): Account!
+    createItem(input: CreateItemInput!): Item!
+    updateItem(id: ID!, input: UpdateItemInput!): Item!
 }

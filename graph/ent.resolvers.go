@@ -39,6 +39,23 @@ func (r *queryResolver) Accounts(ctx context.Context) ([]*model.Account, error) 
 	return modelAccounts, nil
 }
 
+// Items is the resolver for the items field.
+func (r *queryResolver) Items(ctx context.Context) ([]*model.Item, error) {
+	entItems, err := r.client.Item.Query().All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	modelItems := make([]*model.Item, len(entItems))
+	for i, entItem := range entItems {
+		modelItems[i] = &model.Item{
+			ID:    strconv.Itoa(entItem.ID),
+			Name:  entItem.Name,
+			Price: entItem.Price,
+		}
+	}
+	return modelItems, nil
+}
+
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 

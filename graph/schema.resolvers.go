@@ -34,6 +34,30 @@ func (r *mutationResolver) UpdateAccount(ctx context.Context, id string, input m
 	panic(fmt.Errorf("not implemented: UpdateAccount - updateAccount"))
 }
 
+// CreateItem is the resolver for the createItem field.
+func (r *mutationResolver) CreateItem(ctx context.Context, input model.CreateItemInput) (*model.Item, error) {
+	entInput := ent.CreateItemInput{
+		Name:           input.Name,
+		Price:          input.Price,
+		OwnerAccountID: input.OwnerAccountID,
+	}
+	entItem, err := r.client.Item.Create().SetInput(entInput).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &model.Item{
+		ID:             strconv.Itoa(entItem.ID),
+		Name:           entItem.Name,
+		Price:          entItem.Price,
+		OwnerAccountID: entItem.OwnerAccountID,
+	}, nil
+}
+
+// UpdateItem is the resolver for the updateItem field.
+func (r *mutationResolver) UpdateItem(ctx context.Context, id string, input model.UpdateItemInput) (*model.Item, error) {
+	panic(fmt.Errorf("not implemented: UpdateItem - updateItem"))
+}
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 

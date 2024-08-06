@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"reflect"
 	"sandbox-gql/ent/account"
+	"sandbox-gql/ent/item"
 	"sync"
 
 	"entgo.io/ent"
@@ -74,6 +75,7 @@ func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			account.Table: account.ValidColumn,
+			item.Table:    item.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

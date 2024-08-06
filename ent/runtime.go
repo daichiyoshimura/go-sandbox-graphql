@@ -4,6 +4,7 @@ package ent
 
 import (
 	"sandbox-gql/ent/account"
+	"sandbox-gql/ent/item"
 	"sandbox-gql/ent/schema"
 	"time"
 )
@@ -58,4 +59,56 @@ func init() {
 	accountDescUpdatedAt := accountFields[3].Descriptor()
 	// account.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	account.DefaultUpdatedAt = accountDescUpdatedAt.Default.(func() time.Time)
+	itemFields := schema.Item{}.Fields()
+	_ = itemFields
+	// itemDescName is the schema descriptor for name field.
+	itemDescName := itemFields[0].Descriptor()
+	// item.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	item.NameValidator = func() func(string) error {
+		validators := itemDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// itemDescPrice is the schema descriptor for price field.
+	itemDescPrice := itemFields[1].Descriptor()
+	// item.DefaultPrice holds the default value on creation for the price field.
+	item.DefaultPrice = itemDescPrice.Default.(int)
+	// item.PriceValidator is a validator for the "price" field. It is called by the builders before save.
+	item.PriceValidator = itemDescPrice.Validators[0].(func(int) error)
+	// itemDescOwnerAccountID is the schema descriptor for owner_account_id field.
+	itemDescOwnerAccountID := itemFields[2].Descriptor()
+	// item.OwnerAccountIDValidator is a validator for the "owner_account_id" field. It is called by the builders before save.
+	item.OwnerAccountIDValidator = func() func(string) error {
+		validators := itemDescOwnerAccountID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(owner_account_id string) error {
+			for _, fn := range fns {
+				if err := fn(owner_account_id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// itemDescCreatedAt is the schema descriptor for created_at field.
+	itemDescCreatedAt := itemFields[3].Descriptor()
+	// item.DefaultCreatedAt holds the default value on creation for the created_at field.
+	item.DefaultCreatedAt = itemDescCreatedAt.Default.(func() time.Time)
+	// itemDescUpdatedAt is the schema descriptor for updated_at field.
+	itemDescUpdatedAt := itemFields[4].Descriptor()
+	// item.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 }

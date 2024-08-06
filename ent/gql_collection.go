@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"sandbox-gql/ent/account"
+	"sandbox-gql/ent/item"
 
 	"entgo.io/contrib/entgql"
 	"github.com/99designs/gqlgen/graphql"
@@ -110,6 +111,93 @@ func newAccountPaginateArgs(rv map[string]any) *accountPaginateArgs {
 	}
 	if v, ok := rv[whereField].(*AccountWhereInput); ok {
 		args.opts = append(args.opts, WithAccountFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (i *ItemQuery) CollectFields(ctx context.Context, satisfies ...string) (*ItemQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return i, nil
+	}
+	if err := i.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return i, nil
+}
+
+func (i *ItemQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(item.Columns))
+		selectedFields = []string{item.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+		case "name":
+			if _, ok := fieldSeen[item.FieldName]; !ok {
+				selectedFields = append(selectedFields, item.FieldName)
+				fieldSeen[item.FieldName] = struct{}{}
+			}
+		case "price":
+			if _, ok := fieldSeen[item.FieldPrice]; !ok {
+				selectedFields = append(selectedFields, item.FieldPrice)
+				fieldSeen[item.FieldPrice] = struct{}{}
+			}
+		case "ownerAccountID":
+			if _, ok := fieldSeen[item.FieldOwnerAccountID]; !ok {
+				selectedFields = append(selectedFields, item.FieldOwnerAccountID)
+				fieldSeen[item.FieldOwnerAccountID] = struct{}{}
+			}
+		case "createdAt":
+			if _, ok := fieldSeen[item.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, item.FieldCreatedAt)
+				fieldSeen[item.FieldCreatedAt] = struct{}{}
+			}
+		case "updatedAt":
+			if _, ok := fieldSeen[item.FieldUpdatedAt]; !ok {
+				selectedFields = append(selectedFields, item.FieldUpdatedAt)
+				fieldSeen[item.FieldUpdatedAt] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		i.Select(selectedFields...)
+	}
+	return nil
+}
+
+type itemPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []ItemPaginateOption
+}
+
+func newItemPaginateArgs(rv map[string]any) *itemPaginateArgs {
+	args := &itemPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[whereField].(*ItemWhereInput); ok {
+		args.opts = append(args.opts, WithItemFilter(v.Filter))
 	}
 	return args
 }
