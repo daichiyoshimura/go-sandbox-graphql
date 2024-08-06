@@ -14,7 +14,7 @@ import (
 func main() {
 
 	// env
-	dbvars, srvvars, err := env.Load()
+	dbvars, srvvars, _, err := env.Load()
 	if err != nil {
 		log.Fatalf("failed loading env vars: %v", err)
 	}

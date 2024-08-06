@@ -7,18 +7,23 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
-func Load() (*DB, *Server, error) {
+func Load() (*DB, *Server, *Redis, error) {
 	db, err := loadDB()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	srv, err := loadServer()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return db, srv, nil
+	redis, err := loadRedis()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return db, srv, redis, nil
 }
 
 func load(key string) (string, error) {
