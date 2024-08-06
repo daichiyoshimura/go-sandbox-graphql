@@ -14,7 +14,7 @@ See `ent/schema/${new_schema}.go`
 
 ### Step3. Define mutations of the schema
 
-Create `graph/schema/${new_schema}.graphql`
+See & Edit `graph/schema/schema.graphql`
 
 ### Step3. Generate graph code
 
@@ -24,4 +24,4 @@ go generate ./ent
 
 ### Step4. Implement resolvers
 
-See `graph/resolver.go, graph/ent.resolver.go, graph/account.resolver.go`
+See `graph/resolver.go, graph/ent.resolver.go, graph/schema.resolver.go`
