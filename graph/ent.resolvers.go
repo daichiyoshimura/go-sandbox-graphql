@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"sandbox-gql/ent"
+	"sandbox-gql/graph/mapping"
 	"sandbox-gql/graph/model"
 )
 
@@ -29,27 +30,11 @@ func (r *queryResolver) Accounts(ctx context.Context) ([]*model.Account, error) 
 	}
 	modelAccounts := make([]*model.Account, len(entAccounts))
 	for i, entAccount := range entAccounts {
-
 		items, err := entAccount.Items(ctx)
 		if err != nil {
 			return nil, err
 		}
-
-		modelItems := make([]*model.Item, len(items))
-		for j, entItem := range items {
-			modelItems[j] = &model.Item{
-				ID:    entItem.ID,
-				Name:  entItem.Name,
-				Price: entItem.Price,
-			}
-		}
-
-		modelAccounts[i] = &model.Account{
-			ID:    entAccount.ID,
-			Name:  entAccount.Name,
-			Email: entAccount.Email,
-			Items: modelItems,
-		}
+		modelAccounts[i] = mapping.ToGraphAccount(entAccount, mapping.ToGraphItems(items))
 	}
 	return modelAccounts, nil
 }
@@ -60,15 +45,7 @@ func (r *queryResolver) Items(ctx context.Context) ([]*model.Item, error) {
 	if err != nil {
 		return nil, err
 	}
-	modelItems := make([]*model.Item, len(entItems))
-	for i, entItem := range entItems {
-		modelItems[i] = &model.Item{
-			ID:    entItem.ID,
-			Name:  entItem.Name,
-			Price: entItem.Price,
-		}
-	}
-	return modelItems, nil
+	return mapping.ToGraphItems(entItems), nil
 }
 
 // Query returns QueryResolver implementation.

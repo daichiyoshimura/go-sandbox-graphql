@@ -7,25 +7,18 @@ package graph
 import (
 	"context"
 	"fmt"
-	"sandbox-gql/ent"
+	"sandbox-gql/graph/mapping"
 	"sandbox-gql/graph/model"
 )
 
 // CreateAccount is the resolver for the createAccount field.
 func (r *mutationResolver) CreateAccount(ctx context.Context, input model.CreateAccountInput) (*model.Account, error) {
-	entInput := ent.CreateAccountInput{
-		Name:  input.Name,
-		Email: input.Email,
-	}
+	entInput := mapping.ToEntCreateAccountInput(input)
 	entAccount, err := r.client.Account.Create().SetInput(entInput).Save(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &model.Account{
-		ID:    entAccount.ID,
-		Name:  entAccount.Name,
-		Email: entAccount.Email,
-	}, nil
+	return mapping.ToGraphAccount(entAccount, nil), nil
 }
 
 // UpdateAccount is the resolver for the updateAccount field.
@@ -35,29 +28,16 @@ func (r *mutationResolver) UpdateAccount(ctx context.Context, id int, input mode
 
 // CreateItem is the resolver for the createItem field.
 func (r *mutationResolver) CreateItem(ctx context.Context, input model.CreateItemInput) (*model.Item, error) {
-	entInput := ent.CreateItemInput{
-		Name:      input.Name,
-		Price:     input.Price,
-		AccountID: input.AccountID,
-	}
+	entInput := mapping.ToEntCreateItemInput(input)
 	entItem, err := r.client.Item.Create().SetInput(entInput).Save(ctx)
 	if err != nil {
 		return nil, err
 	}
-	account, err := entItem.Account(ctx)
+	entAccount, err := entItem.Account(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &model.Item{
-		ID:    entItem.ID,
-		Name:  entItem.Name,
-		Price: entItem.Price,
-		Account: &model.Account{
-			ID:    account.ID,
-			Name:  account.Name,
-			Email: account.Email,
-		},
-	}, nil
+	return mapping.ToGraphItem(entItem, mapping.ToGraphAccount(entAccount, nil)), nil
 }
 
 // UpdateItem is the resolver for the updateItem field.
