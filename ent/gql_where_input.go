@@ -77,6 +77,10 @@ type AccountWhereInput struct {
 	UpdatedAtGTE   *time.Time  `json:"updatedAtGTE,omitempty"`
 	UpdatedAtLT    *time.Time  `json:"updatedAtLT,omitempty"`
 	UpdatedAtLTE   *time.Time  `json:"updatedAtLTE,omitempty"`
+
+	// "items" edge predicates.
+	HasItems     *bool             `json:"hasItems,omitempty"`
+	HasItemsWith []*ItemWhereInput `json:"hasItemsWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -301,6 +305,24 @@ func (i *AccountWhereInput) P() (predicate.Account, error) {
 		predicates = append(predicates, account.UpdatedAtLTE(*i.UpdatedAtLTE))
 	}
 
+	if i.HasItems != nil {
+		p := account.HasItems()
+		if !*i.HasItems {
+			p = account.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasItemsWith) > 0 {
+		with := make([]predicate.Item, 0, len(i.HasItemsWith))
+		for _, w := range i.HasItemsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasItemsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, account.HasItemsWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyAccountWhereInput
@@ -353,21 +375,6 @@ type ItemWhereInput struct {
 	PriceLT    *int  `json:"priceLT,omitempty"`
 	PriceLTE   *int  `json:"priceLTE,omitempty"`
 
-	// "owner_account_id" field predicates.
-	OwnerAccountID             *string  `json:"ownerAccountID,omitempty"`
-	OwnerAccountIDNEQ          *string  `json:"ownerAccountIDNEQ,omitempty"`
-	OwnerAccountIDIn           []string `json:"ownerAccountIDIn,omitempty"`
-	OwnerAccountIDNotIn        []string `json:"ownerAccountIDNotIn,omitempty"`
-	OwnerAccountIDGT           *string  `json:"ownerAccountIDGT,omitempty"`
-	OwnerAccountIDGTE          *string  `json:"ownerAccountIDGTE,omitempty"`
-	OwnerAccountIDLT           *string  `json:"ownerAccountIDLT,omitempty"`
-	OwnerAccountIDLTE          *string  `json:"ownerAccountIDLTE,omitempty"`
-	OwnerAccountIDContains     *string  `json:"ownerAccountIDContains,omitempty"`
-	OwnerAccountIDHasPrefix    *string  `json:"ownerAccountIDHasPrefix,omitempty"`
-	OwnerAccountIDHasSuffix    *string  `json:"ownerAccountIDHasSuffix,omitempty"`
-	OwnerAccountIDEqualFold    *string  `json:"ownerAccountIDEqualFold,omitempty"`
-	OwnerAccountIDContainsFold *string  `json:"ownerAccountIDContainsFold,omitempty"`
-
 	// "created_at" field predicates.
 	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
 	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
@@ -387,6 +394,10 @@ type ItemWhereInput struct {
 	UpdatedAtGTE   *time.Time  `json:"updatedAtGTE,omitempty"`
 	UpdatedAtLT    *time.Time  `json:"updatedAtLT,omitempty"`
 	UpdatedAtLTE   *time.Time  `json:"updatedAtLTE,omitempty"`
+
+	// "account" edge predicates.
+	HasAccount     *bool                `json:"hasAccount,omitempty"`
+	HasAccountWith []*AccountWhereInput `json:"hasAccountWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -547,45 +558,6 @@ func (i *ItemWhereInput) P() (predicate.Item, error) {
 	if i.PriceLTE != nil {
 		predicates = append(predicates, item.PriceLTE(*i.PriceLTE))
 	}
-	if i.OwnerAccountID != nil {
-		predicates = append(predicates, item.OwnerAccountIDEQ(*i.OwnerAccountID))
-	}
-	if i.OwnerAccountIDNEQ != nil {
-		predicates = append(predicates, item.OwnerAccountIDNEQ(*i.OwnerAccountIDNEQ))
-	}
-	if len(i.OwnerAccountIDIn) > 0 {
-		predicates = append(predicates, item.OwnerAccountIDIn(i.OwnerAccountIDIn...))
-	}
-	if len(i.OwnerAccountIDNotIn) > 0 {
-		predicates = append(predicates, item.OwnerAccountIDNotIn(i.OwnerAccountIDNotIn...))
-	}
-	if i.OwnerAccountIDGT != nil {
-		predicates = append(predicates, item.OwnerAccountIDGT(*i.OwnerAccountIDGT))
-	}
-	if i.OwnerAccountIDGTE != nil {
-		predicates = append(predicates, item.OwnerAccountIDGTE(*i.OwnerAccountIDGTE))
-	}
-	if i.OwnerAccountIDLT != nil {
-		predicates = append(predicates, item.OwnerAccountIDLT(*i.OwnerAccountIDLT))
-	}
-	if i.OwnerAccountIDLTE != nil {
-		predicates = append(predicates, item.OwnerAccountIDLTE(*i.OwnerAccountIDLTE))
-	}
-	if i.OwnerAccountIDContains != nil {
-		predicates = append(predicates, item.OwnerAccountIDContains(*i.OwnerAccountIDContains))
-	}
-	if i.OwnerAccountIDHasPrefix != nil {
-		predicates = append(predicates, item.OwnerAccountIDHasPrefix(*i.OwnerAccountIDHasPrefix))
-	}
-	if i.OwnerAccountIDHasSuffix != nil {
-		predicates = append(predicates, item.OwnerAccountIDHasSuffix(*i.OwnerAccountIDHasSuffix))
-	}
-	if i.OwnerAccountIDEqualFold != nil {
-		predicates = append(predicates, item.OwnerAccountIDEqualFold(*i.OwnerAccountIDEqualFold))
-	}
-	if i.OwnerAccountIDContainsFold != nil {
-		predicates = append(predicates, item.OwnerAccountIDContainsFold(*i.OwnerAccountIDContainsFold))
-	}
 	if i.CreatedAt != nil {
 		predicates = append(predicates, item.CreatedAtEQ(*i.CreatedAt))
 	}
@@ -635,6 +607,24 @@ func (i *ItemWhereInput) P() (predicate.Item, error) {
 		predicates = append(predicates, item.UpdatedAtLTE(*i.UpdatedAtLTE))
 	}
 
+	if i.HasAccount != nil {
+		p := item.HasAccount()
+		if !*i.HasAccount {
+			p = item.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasAccountWith) > 0 {
+		with := make([]predicate.Account, 0, len(i.HasAccountWith))
+		for _, w := range i.HasAccountWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasAccountWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, item.HasAccountWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyItemWhereInput

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"sandbox-gql/ent/account"
+	"sandbox-gql/ent/item"
 	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -58,6 +59,21 @@ func (ac *AccountCreate) SetNillableUpdatedAt(t *time.Time) *AccountCreate {
 		ac.SetUpdatedAt(*t)
 	}
 	return ac
+}
+
+// AddItemIDs adds the "items" edge to the Item entity by IDs.
+func (ac *AccountCreate) AddItemIDs(ids ...int) *AccountCreate {
+	ac.mutation.AddItemIDs(ids...)
+	return ac
+}
+
+// AddItems adds the "items" edges to the Item entity.
+func (ac *AccountCreate) AddItems(i ...*Item) *AccountCreate {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return ac.AddItemIDs(ids...)
 }
 
 // Mutation returns the AccountMutation object of the builder.
@@ -170,6 +186,22 @@ func (ac *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 	if value, ok := ac.mutation.UpdatedAt(); ok {
 		_spec.SetField(account.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if nodes := ac.mutation.ItemsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.ItemsTable,
+			Columns: []string{account.ItemsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

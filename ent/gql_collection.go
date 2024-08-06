@@ -32,6 +32,19 @@ func (a *AccountQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
+		case "items":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ItemClient{config: a.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, itemImplementors)...); err != nil {
+				return err
+			}
+			a.WithNamedItems(alias, func(wq *ItemQuery) {
+				*wq = *query
+			})
 		case "name":
 			if _, ok := fieldSeen[account.FieldName]; !ok {
 				selectedFields = append(selectedFields, account.FieldName)
@@ -136,6 +149,17 @@ func (i *ItemQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
+		case "account":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&AccountClient{config: i.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, accountImplementors)...); err != nil {
+				return err
+			}
+			i.withAccount = query
 		case "name":
 			if _, ok := fieldSeen[item.FieldName]; !ok {
 				selectedFields = append(selectedFields, item.FieldName)
@@ -145,11 +169,6 @@ func (i *ItemQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			if _, ok := fieldSeen[item.FieldPrice]; !ok {
 				selectedFields = append(selectedFields, item.FieldPrice)
 				fieldSeen[item.FieldPrice] = struct{}{}
-			}
-		case "ownerAccountID":
-			if _, ok := fieldSeen[item.FieldOwnerAccountID]; !ok {
-				selectedFields = append(selectedFields, item.FieldOwnerAccountID)
-				fieldSeen[item.FieldOwnerAccountID] = struct{}{}
 			}
 		case "createdAt":
 			if _, ok := fieldSeen[item.FieldCreatedAt]; !ok {

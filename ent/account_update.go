@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"sandbox-gql/ent/account"
+	"sandbox-gql/ent/item"
 	"sandbox-gql/ent/predicate"
 	"time"
 
@@ -84,9 +85,45 @@ func (au *AccountUpdate) SetNillableUpdatedAt(t *time.Time) *AccountUpdate {
 	return au
 }
 
+// AddItemIDs adds the "items" edge to the Item entity by IDs.
+func (au *AccountUpdate) AddItemIDs(ids ...int) *AccountUpdate {
+	au.mutation.AddItemIDs(ids...)
+	return au
+}
+
+// AddItems adds the "items" edges to the Item entity.
+func (au *AccountUpdate) AddItems(i ...*Item) *AccountUpdate {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return au.AddItemIDs(ids...)
+}
+
 // Mutation returns the AccountMutation object of the builder.
 func (au *AccountUpdate) Mutation() *AccountMutation {
 	return au.mutation
+}
+
+// ClearItems clears all "items" edges to the Item entity.
+func (au *AccountUpdate) ClearItems() *AccountUpdate {
+	au.mutation.ClearItems()
+	return au
+}
+
+// RemoveItemIDs removes the "items" edge to Item entities by IDs.
+func (au *AccountUpdate) RemoveItemIDs(ids ...int) *AccountUpdate {
+	au.mutation.RemoveItemIDs(ids...)
+	return au
+}
+
+// RemoveItems removes "items" edges to Item entities.
+func (au *AccountUpdate) RemoveItems(i ...*Item) *AccountUpdate {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return au.RemoveItemIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -154,6 +191,51 @@ func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := au.mutation.UpdatedAt(); ok {
 		_spec.SetField(account.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if au.mutation.ItemsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.ItemsTable,
+			Columns: []string{account.ItemsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedItemsIDs(); len(nodes) > 0 && !au.mutation.ItemsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.ItemsTable,
+			Columns: []string{account.ItemsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.ItemsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.ItemsTable,
+			Columns: []string{account.ItemsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -231,9 +313,45 @@ func (auo *AccountUpdateOne) SetNillableUpdatedAt(t *time.Time) *AccountUpdateOn
 	return auo
 }
 
+// AddItemIDs adds the "items" edge to the Item entity by IDs.
+func (auo *AccountUpdateOne) AddItemIDs(ids ...int) *AccountUpdateOne {
+	auo.mutation.AddItemIDs(ids...)
+	return auo
+}
+
+// AddItems adds the "items" edges to the Item entity.
+func (auo *AccountUpdateOne) AddItems(i ...*Item) *AccountUpdateOne {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return auo.AddItemIDs(ids...)
+}
+
 // Mutation returns the AccountMutation object of the builder.
 func (auo *AccountUpdateOne) Mutation() *AccountMutation {
 	return auo.mutation
+}
+
+// ClearItems clears all "items" edges to the Item entity.
+func (auo *AccountUpdateOne) ClearItems() *AccountUpdateOne {
+	auo.mutation.ClearItems()
+	return auo
+}
+
+// RemoveItemIDs removes the "items" edge to Item entities by IDs.
+func (auo *AccountUpdateOne) RemoveItemIDs(ids ...int) *AccountUpdateOne {
+	auo.mutation.RemoveItemIDs(ids...)
+	return auo
+}
+
+// RemoveItems removes "items" edges to Item entities.
+func (auo *AccountUpdateOne) RemoveItems(i ...*Item) *AccountUpdateOne {
+	ids := make([]int, len(i))
+	for j := range i {
+		ids[j] = i[j].ID
+	}
+	return auo.RemoveItemIDs(ids...)
 }
 
 // Where appends a list predicates to the AccountUpdate builder.
@@ -331,6 +449,51 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 	}
 	if value, ok := auo.mutation.UpdatedAt(); ok {
 		_spec.SetField(account.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if auo.mutation.ItemsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.ItemsTable,
+			Columns: []string{account.ItemsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedItemsIDs(); len(nodes) > 0 && !auo.mutation.ItemsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.ItemsTable,
+			Columns: []string{account.ItemsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.ItemsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   account.ItemsTable,
+			Columns: []string{account.ItemsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Account{config: auo.config}
 	_spec.Assign = _node.assignValues

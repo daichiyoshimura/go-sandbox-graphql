@@ -12,6 +12,7 @@ type CreateAccountInput struct {
 	Email     string
 	CreatedAt *time.Time
 	UpdatedAt *time.Time
+	ItemIDs   []int
 }
 
 // Mutate applies the CreateAccountInput on the AccountMutation builder.
@@ -24,6 +25,9 @@ func (i *CreateAccountInput) Mutate(m *AccountMutation) {
 	if v := i.UpdatedAt; v != nil {
 		m.SetUpdatedAt(*v)
 	}
+	if v := i.ItemIDs; len(v) > 0 {
+		m.AddItemIDs(v...)
+	}
 }
 
 // SetInput applies the change-set in the CreateAccountInput on the AccountCreate builder.
@@ -34,10 +38,13 @@ func (c *AccountCreate) SetInput(i CreateAccountInput) *AccountCreate {
 
 // UpdateAccountInput represents a mutation input for updating accounts.
 type UpdateAccountInput struct {
-	Name      *string
-	Email     *string
-	CreatedAt *time.Time
-	UpdatedAt *time.Time
+	Name          *string
+	Email         *string
+	CreatedAt     *time.Time
+	UpdatedAt     *time.Time
+	ClearItems    bool
+	AddItemIDs    []int
+	RemoveItemIDs []int
 }
 
 // Mutate applies the UpdateAccountInput on the AccountMutation builder.
@@ -53,6 +60,15 @@ func (i *UpdateAccountInput) Mutate(m *AccountMutation) {
 	}
 	if v := i.UpdatedAt; v != nil {
 		m.SetUpdatedAt(*v)
+	}
+	if i.ClearItems {
+		m.ClearItems()
+	}
+	if v := i.AddItemIDs; len(v) > 0 {
+		m.AddItemIDs(v...)
+	}
+	if v := i.RemoveItemIDs; len(v) > 0 {
+		m.RemoveItemIDs(v...)
 	}
 }
 
@@ -70,11 +86,11 @@ func (c *AccountUpdateOne) SetInput(i UpdateAccountInput) *AccountUpdateOne {
 
 // CreateItemInput represents a mutation input for creating items.
 type CreateItemInput struct {
-	Name           string
-	Price          *int
-	OwnerAccountID string
-	CreatedAt      *time.Time
-	UpdatedAt      *time.Time
+	Name      string
+	Price     *int
+	CreatedAt *time.Time
+	UpdatedAt *time.Time
+	AccountID *int
 }
 
 // Mutate applies the CreateItemInput on the ItemMutation builder.
@@ -83,12 +99,14 @@ func (i *CreateItemInput) Mutate(m *ItemMutation) {
 	if v := i.Price; v != nil {
 		m.SetPrice(*v)
 	}
-	m.SetOwnerAccountID(i.OwnerAccountID)
 	if v := i.CreatedAt; v != nil {
 		m.SetCreatedAt(*v)
 	}
 	if v := i.UpdatedAt; v != nil {
 		m.SetUpdatedAt(*v)
+	}
+	if v := i.AccountID; v != nil {
+		m.SetAccountID(*v)
 	}
 }
 
@@ -100,11 +118,12 @@ func (c *ItemCreate) SetInput(i CreateItemInput) *ItemCreate {
 
 // UpdateItemInput represents a mutation input for updating items.
 type UpdateItemInput struct {
-	Name           *string
-	Price          *int
-	OwnerAccountID *string
-	CreatedAt      *time.Time
-	UpdatedAt      *time.Time
+	Name         *string
+	Price        *int
+	CreatedAt    *time.Time
+	UpdatedAt    *time.Time
+	ClearAccount bool
+	AccountID    *int
 }
 
 // Mutate applies the UpdateItemInput on the ItemMutation builder.
@@ -115,14 +134,17 @@ func (i *UpdateItemInput) Mutate(m *ItemMutation) {
 	if v := i.Price; v != nil {
 		m.SetPrice(*v)
 	}
-	if v := i.OwnerAccountID; v != nil {
-		m.SetOwnerAccountID(*v)
-	}
 	if v := i.CreatedAt; v != nil {
 		m.SetCreatedAt(*v)
 	}
 	if v := i.UpdatedAt; v != nil {
 		m.SetUpdatedAt(*v)
+	}
+	if i.ClearAccount {
+		m.ClearAccount()
+	}
+	if v := i.AccountID; v != nil {
+		m.SetAccountID(*v)
 	}
 }
 

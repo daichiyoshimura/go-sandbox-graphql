@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sandbox-gql/ent/account"
 	"sandbox-gql/ent/item"
 	"time"
 
@@ -40,12 +41,6 @@ func (ic *ItemCreate) SetNillablePrice(i *int) *ItemCreate {
 	return ic
 }
 
-// SetOwnerAccountID sets the "owner_account_id" field.
-func (ic *ItemCreate) SetOwnerAccountID(s string) *ItemCreate {
-	ic.mutation.SetOwnerAccountID(s)
-	return ic
-}
-
 // SetCreatedAt sets the "created_at" field.
 func (ic *ItemCreate) SetCreatedAt(t time.Time) *ItemCreate {
 	ic.mutation.SetCreatedAt(t)
@@ -72,6 +67,25 @@ func (ic *ItemCreate) SetNillableUpdatedAt(t *time.Time) *ItemCreate {
 		ic.SetUpdatedAt(*t)
 	}
 	return ic
+}
+
+// SetAccountID sets the "account" edge to the Account entity by ID.
+func (ic *ItemCreate) SetAccountID(id int) *ItemCreate {
+	ic.mutation.SetAccountID(id)
+	return ic
+}
+
+// SetNillableAccountID sets the "account" edge to the Account entity by ID if the given value is not nil.
+func (ic *ItemCreate) SetNillableAccountID(id *int) *ItemCreate {
+	if id != nil {
+		ic = ic.SetAccountID(*id)
+	}
+	return ic
+}
+
+// SetAccount sets the "account" edge to the Account entity.
+func (ic *ItemCreate) SetAccount(a *Account) *ItemCreate {
+	return ic.SetAccountID(a.ID)
 }
 
 // Mutation returns the ItemMutation object of the builder.
@@ -141,14 +155,6 @@ func (ic *ItemCreate) check() error {
 			return &ValidationError{Name: "price", err: fmt.Errorf(`ent: validator failed for field "Item.price": %w`, err)}
 		}
 	}
-	if _, ok := ic.mutation.OwnerAccountID(); !ok {
-		return &ValidationError{Name: "owner_account_id", err: errors.New(`ent: missing required field "Item.owner_account_id"`)}
-	}
-	if v, ok := ic.mutation.OwnerAccountID(); ok {
-		if err := item.OwnerAccountIDValidator(v); err != nil {
-			return &ValidationError{Name: "owner_account_id", err: fmt.Errorf(`ent: validator failed for field "Item.owner_account_id": %w`, err)}
-		}
-	}
 	if _, ok := ic.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Item.created_at"`)}
 	}
@@ -189,10 +195,6 @@ func (ic *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_spec.SetField(item.FieldPrice, field.TypeInt, value)
 		_node.Price = value
 	}
-	if value, ok := ic.mutation.OwnerAccountID(); ok {
-		_spec.SetField(item.FieldOwnerAccountID, field.TypeString, value)
-		_node.OwnerAccountID = value
-	}
 	if value, ok := ic.mutation.CreatedAt(); ok {
 		_spec.SetField(item.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
@@ -200,6 +202,23 @@ func (ic *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 	if value, ok := ic.mutation.UpdatedAt(); ok {
 		_spec.SetField(item.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if nodes := ic.mutation.AccountIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.AccountTable,
+			Columns: []string{item.AccountColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.account_items = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

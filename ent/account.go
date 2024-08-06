@@ -24,8 +24,33 @@ type Account struct {
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
-	UpdatedAt    time.Time `json:"updated_at,omitempty"`
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the AccountQuery when eager-loading is set.
+	Edges        AccountEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// AccountEdges holds the relations/edges for other nodes in the graph.
+type AccountEdges struct {
+	// Items holds the value of the items edge.
+	Items []*Item `json:"items,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+	// totalCount holds the count of the edges above.
+	totalCount [1]map[string]int
+
+	namedItems map[string][]*Item
+}
+
+// ItemsOrErr returns the Items value or an error if the edge
+// was not loaded in eager-loading.
+func (e AccountEdges) ItemsOrErr() ([]*Item, error) {
+	if e.loadedTypes[0] {
+		return e.Items, nil
+	}
+	return nil, &NotLoadedError{edge: "items"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -97,6 +122,11 @@ func (a *Account) Value(name string) (ent.Value, error) {
 	return a.selectValues.Get(name)
 }
 
+// QueryItems queries the "items" edge of the Account entity.
+func (a *Account) QueryItems() *ItemQuery {
+	return NewAccountClient(a.config).QueryItems(a)
+}
+
 // Update returns a builder for updating this Account.
 // Note that you need to call Account.Unwrap() before calling this method if this Account
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -133,6 +163,30 @@ func (a *Account) String() string {
 	builder.WriteString(a.UpdatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
+}
+
+// NamedItems returns the Items named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (a *Account) NamedItems(name string) ([]*Item, error) {
+	if a.Edges.namedItems == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := a.Edges.namedItems[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (a *Account) appendNamedItems(name string, edges ...*Item) {
+	if a.Edges.namedItems == nil {
+		a.Edges.namedItems = make(map[string][]*Item)
+	}
+	if len(edges) == 0 {
+		a.Edges.namedItems[name] = []*Item{}
+	} else {
+		a.Edges.namedItems[name] = append(a.Edges.namedItems[name], edges...)
+	}
 }
 
 // Accounts is a parsable slice of Account.

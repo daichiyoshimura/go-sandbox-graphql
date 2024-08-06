@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sandbox-gql/ent/account"
 	"sandbox-gql/ent/item"
 	"sandbox-gql/ent/predicate"
 	"time"
@@ -63,20 +64,6 @@ func (iu *ItemUpdate) AddPrice(i int) *ItemUpdate {
 	return iu
 }
 
-// SetOwnerAccountID sets the "owner_account_id" field.
-func (iu *ItemUpdate) SetOwnerAccountID(s string) *ItemUpdate {
-	iu.mutation.SetOwnerAccountID(s)
-	return iu
-}
-
-// SetNillableOwnerAccountID sets the "owner_account_id" field if the given value is not nil.
-func (iu *ItemUpdate) SetNillableOwnerAccountID(s *string) *ItemUpdate {
-	if s != nil {
-		iu.SetOwnerAccountID(*s)
-	}
-	return iu
-}
-
 // SetCreatedAt sets the "created_at" field.
 func (iu *ItemUpdate) SetCreatedAt(t time.Time) *ItemUpdate {
 	iu.mutation.SetCreatedAt(t)
@@ -105,9 +92,34 @@ func (iu *ItemUpdate) SetNillableUpdatedAt(t *time.Time) *ItemUpdate {
 	return iu
 }
 
+// SetAccountID sets the "account" edge to the Account entity by ID.
+func (iu *ItemUpdate) SetAccountID(id int) *ItemUpdate {
+	iu.mutation.SetAccountID(id)
+	return iu
+}
+
+// SetNillableAccountID sets the "account" edge to the Account entity by ID if the given value is not nil.
+func (iu *ItemUpdate) SetNillableAccountID(id *int) *ItemUpdate {
+	if id != nil {
+		iu = iu.SetAccountID(*id)
+	}
+	return iu
+}
+
+// SetAccount sets the "account" edge to the Account entity.
+func (iu *ItemUpdate) SetAccount(a *Account) *ItemUpdate {
+	return iu.SetAccountID(a.ID)
+}
+
 // Mutation returns the ItemMutation object of the builder.
 func (iu *ItemUpdate) Mutation() *ItemMutation {
 	return iu.mutation
+}
+
+// ClearAccount clears the "account" edge to the Account entity.
+func (iu *ItemUpdate) ClearAccount() *ItemUpdate {
+	iu.mutation.ClearAccount()
+	return iu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -149,11 +161,6 @@ func (iu *ItemUpdate) check() error {
 			return &ValidationError{Name: "price", err: fmt.Errorf(`ent: validator failed for field "Item.price": %w`, err)}
 		}
 	}
-	if v, ok := iu.mutation.OwnerAccountID(); ok {
-		if err := item.OwnerAccountIDValidator(v); err != nil {
-			return &ValidationError{Name: "owner_account_id", err: fmt.Errorf(`ent: validator failed for field "Item.owner_account_id": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -178,14 +185,40 @@ func (iu *ItemUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := iu.mutation.AddedPrice(); ok {
 		_spec.AddField(item.FieldPrice, field.TypeInt, value)
 	}
-	if value, ok := iu.mutation.OwnerAccountID(); ok {
-		_spec.SetField(item.FieldOwnerAccountID, field.TypeString, value)
-	}
 	if value, ok := iu.mutation.CreatedAt(); ok {
 		_spec.SetField(item.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := iu.mutation.UpdatedAt(); ok {
 		_spec.SetField(item.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if iu.mutation.AccountCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.AccountTable,
+			Columns: []string{item.AccountColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iu.mutation.AccountIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.AccountTable,
+			Columns: []string{item.AccountColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, iu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -242,20 +275,6 @@ func (iuo *ItemUpdateOne) AddPrice(i int) *ItemUpdateOne {
 	return iuo
 }
 
-// SetOwnerAccountID sets the "owner_account_id" field.
-func (iuo *ItemUpdateOne) SetOwnerAccountID(s string) *ItemUpdateOne {
-	iuo.mutation.SetOwnerAccountID(s)
-	return iuo
-}
-
-// SetNillableOwnerAccountID sets the "owner_account_id" field if the given value is not nil.
-func (iuo *ItemUpdateOne) SetNillableOwnerAccountID(s *string) *ItemUpdateOne {
-	if s != nil {
-		iuo.SetOwnerAccountID(*s)
-	}
-	return iuo
-}
-
 // SetCreatedAt sets the "created_at" field.
 func (iuo *ItemUpdateOne) SetCreatedAt(t time.Time) *ItemUpdateOne {
 	iuo.mutation.SetCreatedAt(t)
@@ -284,9 +303,34 @@ func (iuo *ItemUpdateOne) SetNillableUpdatedAt(t *time.Time) *ItemUpdateOne {
 	return iuo
 }
 
+// SetAccountID sets the "account" edge to the Account entity by ID.
+func (iuo *ItemUpdateOne) SetAccountID(id int) *ItemUpdateOne {
+	iuo.mutation.SetAccountID(id)
+	return iuo
+}
+
+// SetNillableAccountID sets the "account" edge to the Account entity by ID if the given value is not nil.
+func (iuo *ItemUpdateOne) SetNillableAccountID(id *int) *ItemUpdateOne {
+	if id != nil {
+		iuo = iuo.SetAccountID(*id)
+	}
+	return iuo
+}
+
+// SetAccount sets the "account" edge to the Account entity.
+func (iuo *ItemUpdateOne) SetAccount(a *Account) *ItemUpdateOne {
+	return iuo.SetAccountID(a.ID)
+}
+
 // Mutation returns the ItemMutation object of the builder.
 func (iuo *ItemUpdateOne) Mutation() *ItemMutation {
 	return iuo.mutation
+}
+
+// ClearAccount clears the "account" edge to the Account entity.
+func (iuo *ItemUpdateOne) ClearAccount() *ItemUpdateOne {
+	iuo.mutation.ClearAccount()
+	return iuo
 }
 
 // Where appends a list predicates to the ItemUpdate builder.
@@ -341,11 +385,6 @@ func (iuo *ItemUpdateOne) check() error {
 			return &ValidationError{Name: "price", err: fmt.Errorf(`ent: validator failed for field "Item.price": %w`, err)}
 		}
 	}
-	if v, ok := iuo.mutation.OwnerAccountID(); ok {
-		if err := item.OwnerAccountIDValidator(v); err != nil {
-			return &ValidationError{Name: "owner_account_id", err: fmt.Errorf(`ent: validator failed for field "Item.owner_account_id": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -387,14 +426,40 @@ func (iuo *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) 
 	if value, ok := iuo.mutation.AddedPrice(); ok {
 		_spec.AddField(item.FieldPrice, field.TypeInt, value)
 	}
-	if value, ok := iuo.mutation.OwnerAccountID(); ok {
-		_spec.SetField(item.FieldOwnerAccountID, field.TypeString, value)
-	}
 	if value, ok := iuo.mutation.CreatedAt(); ok {
 		_spec.SetField(item.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := iuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(item.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if iuo.mutation.AccountCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.AccountTable,
+			Columns: []string{item.AccountColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := iuo.mutation.AccountIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   item.AccountTable,
+			Columns: []string{item.AccountColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Item{config: iuo.config}
 	_spec.Assign = _node.assignValues

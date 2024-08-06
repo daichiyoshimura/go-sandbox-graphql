@@ -85,30 +85,12 @@ func init() {
 	item.DefaultPrice = itemDescPrice.Default.(int)
 	// item.PriceValidator is a validator for the "price" field. It is called by the builders before save.
 	item.PriceValidator = itemDescPrice.Validators[0].(func(int) error)
-	// itemDescOwnerAccountID is the schema descriptor for owner_account_id field.
-	itemDescOwnerAccountID := itemFields[2].Descriptor()
-	// item.OwnerAccountIDValidator is a validator for the "owner_account_id" field. It is called by the builders before save.
-	item.OwnerAccountIDValidator = func() func(string) error {
-		validators := itemDescOwnerAccountID.Validators
-		fns := [...]func(string) error{
-			validators[0].(func(string) error),
-			validators[1].(func(string) error),
-		}
-		return func(owner_account_id string) error {
-			for _, fn := range fns {
-				if err := fn(owner_account_id); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}()
 	// itemDescCreatedAt is the schema descriptor for created_at field.
-	itemDescCreatedAt := itemFields[3].Descriptor()
+	itemDescCreatedAt := itemFields[2].Descriptor()
 	// item.DefaultCreatedAt holds the default value on creation for the created_at field.
 	item.DefaultCreatedAt = itemDescCreatedAt.Default.(func() time.Time)
 	// itemDescUpdatedAt is the schema descriptor for updated_at field.
-	itemDescUpdatedAt := itemFields[4].Descriptor()
+	itemDescUpdatedAt := itemFields[3].Descriptor()
 	// item.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	item.DefaultUpdatedAt = itemDescUpdatedAt.Default.(func() time.Time)
 }

@@ -6,6 +6,7 @@ import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
@@ -19,7 +20,6 @@ func (Item) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").NotEmpty().MaxLen(255),
 		field.Int("price").NonNegative().Default(0),
-		field.String("owner_account_id").NotEmpty().MaxLen(255),
 		field.Time("created_at").Default(time.Now),
 		field.Time("updated_at").Default(time.Now),
 	}
@@ -27,7 +27,11 @@ func (Item) Fields() []ent.Field {
 
 // Edges of the Item.
 func (Item) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+        edge.From("account", Account.Type).
+            Ref("items").
+            Unique(),
+    }
 }
 
 

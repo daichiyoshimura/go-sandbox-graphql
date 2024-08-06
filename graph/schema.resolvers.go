@@ -37,19 +37,17 @@ func (r *mutationResolver) UpdateAccount(ctx context.Context, id string, input m
 // CreateItem is the resolver for the createItem field.
 func (r *mutationResolver) CreateItem(ctx context.Context, input model.CreateItemInput) (*model.Item, error) {
 	entInput := ent.CreateItemInput{
-		Name:           input.Name,
-		Price:          input.Price,
-		OwnerAccountID: input.OwnerAccountID,
+		Name:  input.Name,
+		Price: input.Price,
 	}
 	entItem, err := r.client.Item.Create().SetInput(entInput).Save(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &model.Item{
-		ID:             strconv.Itoa(entItem.ID),
-		Name:           entItem.Name,
-		Price:          entItem.Price,
-		OwnerAccountID: entItem.OwnerAccountID,
+		ID:    strconv.Itoa(entItem.ID),
+		Name:  entItem.Name,
+		Price: entItem.Price,
 	}, nil
 }
 

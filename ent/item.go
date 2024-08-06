@@ -4,6 +4,7 @@ package ent
 
 import (
 	"fmt"
+	"sandbox-gql/ent/account"
 	"sandbox-gql/ent/item"
 	"strings"
 	"time"
@@ -21,13 +22,37 @@ type Item struct {
 	Name string `json:"name,omitempty"`
 	// Price holds the value of the "price" field.
 	Price int `json:"price,omitempty"`
-	// OwnerAccountID holds the value of the "owner_account_id" field.
-	OwnerAccountID string `json:"owner_account_id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
-	UpdatedAt    time.Time `json:"updated_at,omitempty"`
-	selectValues sql.SelectValues
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the ItemQuery when eager-loading is set.
+	Edges         ItemEdges `json:"edges"`
+	account_items *int
+	selectValues  sql.SelectValues
+}
+
+// ItemEdges holds the relations/edges for other nodes in the graph.
+type ItemEdges struct {
+	// Account holds the value of the account edge.
+	Account *Account `json:"account,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+	// totalCount holds the count of the edges above.
+	totalCount [1]map[string]int
+}
+
+// AccountOrErr returns the Account value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e ItemEdges) AccountOrErr() (*Account, error) {
+	if e.Account != nil {
+		return e.Account, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: account.Label}
+	}
+	return nil, &NotLoadedError{edge: "account"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -37,10 +62,12 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case item.FieldID, item.FieldPrice:
 			values[i] = new(sql.NullInt64)
-		case item.FieldName, item.FieldOwnerAccountID:
+		case item.FieldName:
 			values[i] = new(sql.NullString)
 		case item.FieldCreatedAt, item.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
+		case item.ForeignKeys[0]: // account_items
+			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -74,12 +101,6 @@ func (i *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				i.Price = int(value.Int64)
 			}
-		case item.FieldOwnerAccountID:
-			if value, ok := values[j].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field owner_account_id", values[j])
-			} else if value.Valid {
-				i.OwnerAccountID = value.String
-			}
 		case item.FieldCreatedAt:
 			if value, ok := values[j].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[j])
@@ -92,6 +113,13 @@ func (i *Item) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				i.UpdatedAt = value.Time
 			}
+		case item.ForeignKeys[0]:
+			if value, ok := values[j].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field account_items", value)
+			} else if value.Valid {
+				i.account_items = new(int)
+				*i.account_items = int(value.Int64)
+			}
 		default:
 			i.selectValues.Set(columns[j], values[j])
 		}
@@ -103,6 +131,11 @@ func (i *Item) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (i *Item) Value(name string) (ent.Value, error) {
 	return i.selectValues.Get(name)
+}
+
+// QueryAccount queries the "account" edge of the Item entity.
+func (i *Item) QueryAccount() *AccountQuery {
+	return NewItemClient(i.config).QueryAccount(i)
 }
 
 // Update returns a builder for updating this Item.
@@ -133,9 +166,6 @@ func (i *Item) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("price=")
 	builder.WriteString(fmt.Sprintf("%v", i.Price))
-	builder.WriteString(", ")
-	builder.WriteString("owner_account_id=")
-	builder.WriteString(i.OwnerAccountID)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(i.CreatedAt.Format(time.ANSIC))
