@@ -14,7 +14,7 @@ COPY . .
 RUN go build -o myapp ./cmd/server
 
 # Stage 2: Lint and format the code
-FROM golang:1.23rc2 as linter
+FROM golang:1.22 as linter
 
 WORKDIR /app
 
