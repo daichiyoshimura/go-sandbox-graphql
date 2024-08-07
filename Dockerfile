@@ -1,5 +1,5 @@
 # Stage 1: Build the Go application
-FROM golang:1.22 as builder
+FROM golang:1.22.6 as builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY . .
 RUN go build -o myapp ./cmd/server
 
 # Stage 2: Lint and format the code
-FROM golang:1.22 as linter
+FROM golang:1.22.6 as linter
 
 WORKDIR /app
 

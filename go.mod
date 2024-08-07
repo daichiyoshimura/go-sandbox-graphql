@@ -1,6 +1,8 @@
 module sandbox-gql
 
-go 1.23rc2
+go 1.22.6
+
+toolchain go1.23rc2
 
 require (
 	entgo.io/contrib v0.6.0
