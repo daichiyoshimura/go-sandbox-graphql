@@ -1,0 +1,29 @@
+run:
+  include:
+    - "cmd"
+    - "ent/schema"
+    - "graph/mapping"
+    - "graph"
+    - "internal"
+  tests: true
+  timeout: 5m
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - gosimple
+    - unused
+    - structcheck
+    - varcheck
+    - deadcode
+    - ineffassign
+issues:
+  exclude-rules:
+    - linters:
+        - errcheck
+      text: "error return value not checked"
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
