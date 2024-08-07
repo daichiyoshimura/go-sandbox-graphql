@@ -1,9 +1,9 @@
 package env
 
 import (
-	"errors"
 	"fmt"
 	"os"
+
 	_ "github.com/joho/godotenv/autoload"
 )
 
@@ -29,7 +29,7 @@ func Load() (*DB, *Server, *Redis, error) {
 func load(key string) (string, error) {
 	v := os.Getenv(key)
 	if v == "" {
-		return "", errors.New(fmt.Sprintf("%s must be set", key))
+		return "", fmt.Errorf("%s must be set", key)
 	}
 	return v, nil
 }

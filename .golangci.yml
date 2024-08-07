@@ -14,9 +14,6 @@ linters:
     - staticcheck
     - gosimple
     - unused
-    - structcheck
-    - varcheck
-    - deadcode
     - ineffassign
 issues:
   exclude-rules:
@@ -24,6 +21,6 @@ issues:
         - errcheck
       text: "error return value not checked"
 output:
-  format: colored-line-number
+  formats: colored-line-number
   print-issued-lines: true
   print-linter-name: true
