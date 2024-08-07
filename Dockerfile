@@ -10,10 +10,6 @@ RUN go mod download
 # Copy the source code
 COPY . .
 
-# Install linters and formatters
-RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-RUN go install golang.org/x/tools/cmd/goimports@latest
-
 # Build the application (optional, depending on your needs)
 RUN go build -o myapp ./cmd/server
 
@@ -24,6 +20,10 @@ WORKDIR /app
 
 # Copy the source code
 COPY --from=builder /app /app
+
+# Install linters and formatters
+RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+RUN go install golang.org/x/tools/cmd/goimports@latest
 
 # Run golangci-lint
 RUN golangci-lint run --config .golangci.yml
