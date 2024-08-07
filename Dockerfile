@@ -15,7 +15,7 @@ RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 RUN go install golang.org/x/tools/cmd/goimports@latest
 
 # Build the application (optional, depending on your needs)
-RUN go build -o myapp
+RUN go build -o myapp ./...
 
 # Stage 2: Lint and format the code
 FROM golang:1.23rc2 as linter
