@@ -28,8 +28,8 @@ func (Account) Fields() []ent.Field {
 // Edges of the Account.
 func (Account) Edges() []ent.Edge {
 	return []ent.Edge{
-        edge.To("items", Item.Type),
-    }
+		edge.To("items", Item.Type),
+	}
 }
 
 func (Account) Annotations() []schema.Annotation {

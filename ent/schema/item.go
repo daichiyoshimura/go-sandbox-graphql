@@ -28,12 +28,11 @@ func (Item) Fields() []ent.Field {
 // Edges of the Item.
 func (Item) Edges() []ent.Edge {
 	return []ent.Edge{
-        edge.From("account", Account.Type).
-            Ref("items").
-            Unique(),
-    }
+		edge.From("account", Account.Type).
+			Ref("items").
+			Unique(),
+	}
 }
-
 
 func (Item) Annotations() []schema.Annotation {
 	return []schema.Annotation{

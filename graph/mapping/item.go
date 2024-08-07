@@ -7,9 +7,9 @@ import (
 
 func ToGraphItem(item *ent.Item, account *model.Account) *model.Item {
 	return &model.Item{
-		ID:    item.ID,
-		Name:  item.Name,
-		Price: item.Price,
+		ID:      item.ID,
+		Name:    item.Name,
+		Price:   item.Price,
 		Account: account,
 	}
 }
