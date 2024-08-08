@@ -8,8 +8,8 @@ import (
 	"context"
 	"fmt"
 	"sandbox-gql/ent"
-	"sandbox-gql/graph/mapping"
 	"sandbox-gql/graph/model"
+	"sandbox-gql/internal/service"
 )
 
 // Node is the resolver for the node field.
@@ -24,31 +24,17 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, erro
 
 // Accounts is the resolver for the accounts field.
 func (r *queryResolver) Accounts(ctx context.Context) ([]*model.Account, error) {
-	entAccounts, err := r.client.Account.Query().WithItems().All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return mapping.ToGraphAccounts(entAccounts), nil
+	return service.NewAccountService(r.client).List(ctx)
 }
 
 // Customers is the resolver for the customers field.
 func (r *queryResolver) Customers(ctx context.Context) ([]*model.Customer, error) {
-	entCustomers, err := r.client.Customer.Query().WithFollows(func(q *ent.AccountQuery) {
-		q.WithItems()
-	}).All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return mapping.ToGraphCustomers(entCustomers), nil
+	return service.NewCustomerService(r.client).List(ctx)
 }
 
 // Items is the resolver for the items field.
 func (r *queryResolver) Items(ctx context.Context) ([]*model.Item, error) {
-	entItems, err := r.client.Item.Query().WithOwner().All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return mapping.ToGraphItems(entItems), nil
+	return service.NewItemsService(r.client).List(ctx)
 }
 
 // Query returns QueryResolver implementation.

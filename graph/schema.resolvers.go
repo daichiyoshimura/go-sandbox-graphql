@@ -7,22 +7,13 @@ package graph
 import (
 	"context"
 	"fmt"
-	"sandbox-gql/ent"
-	"sandbox-gql/ent/account"
-	"sandbox-gql/ent/customer"
-	"sandbox-gql/graph/mapping"
 	"sandbox-gql/graph/model"
-	"sandbox-gql/internal/db"
+	"sandbox-gql/internal/service"
 )
 
 // CreateAccount is the resolver for the createAccount field.
 func (r *mutationResolver) CreateAccount(ctx context.Context, input model.CreateAccountInput) (*model.Account, error) {
-	entInput := mapping.ToEntCreateAccountInput(input)
-	entAccount, err := r.client.Account.Create().SetInput(entInput).Save(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return mapping.ToGraphAccount(entAccount), nil
+	return service.NewAccountService(r.client).Create(ctx, input)
 }
 
 // UpdateAccount is the resolver for the updateAccount field.
@@ -32,12 +23,7 @@ func (r *mutationResolver) UpdateAccount(ctx context.Context, id int, input mode
 
 // CreateItem is the resolver for the createItem field.
 func (r *mutationResolver) CreateItem(ctx context.Context, input model.CreateItemInput) (*model.Item, error) {
-	entInput := mapping.ToEntCreateItemInput(input)
-	entItem, err := r.client.Item.Create().SetInput(entInput).Save(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return mapping.ToGraphItem(entItem), nil
+	return service.NewItemsService(r.client).Create(ctx, input)
 }
 
 // UpdateItem is the resolver for the updateItem field.
@@ -47,54 +33,12 @@ func (r *mutationResolver) UpdateItem(ctx context.Context, id int, input model.U
 
 // CreateCustomer is the resolver for the createCustomer field.
 func (r *mutationResolver) CreateCustomer(ctx context.Context, input model.CreateCustomerInput) (*model.Customer, error) {
-	entInput := mapping.ToEntCreateCustomerInput(input)
-	entCustomer, err := r.client.Customer.Create().SetInput(entInput).Save(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return mapping.ToGraphCustomer(entCustomer), nil
+	return service.NewCustomerService(r.client).Create(ctx, input)
 }
 
 // UpdateCustomer is the resolver for the updateCustomer field.
 func (r *mutationResolver) UpdateCustomer(ctx context.Context, id int, input model.UpdateCustomerInput) (*model.Customer, error) {
-	return db.RunInTransaction(ctx, r.client, func(tx *ent.Tx) (*model.Customer, error) {
-
-		customerUpdate := tx.Customer.UpdateOneID(id)
-		if len(input.AddFollowIDs) > 0 {
-			follows, err := tx.Account.Query().
-				Where(account.IDIn(input.AddFollowIDs...)).
-				All(ctx)
-			if err != nil {
-				return nil, err
-			}
-			customerUpdate.AddFollows(follows...)
-		}
-
-		if len(input.RemoveFollowIDs) > 0 {
-			follows, err := tx.Account.Query().
-				Where(account.IDIn(input.RemoveFollowIDs...)).
-				All(ctx)
-			if err != nil {
-				return nil, err
-			}
-			customerUpdate.RemoveFollows(follows...)
-		}
-
-		entInput := mapping.ToEntUpdateCustomerInput(input)
-		if _, err := customerUpdate.SetInput(entInput).Save(ctx); err != nil {
-			return nil, err
-		}
-
-		entCustomer, err := tx.Customer.Query().
-			Where(customer.ID(id)).
-			WithFollows().
-			Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		return mapping.ToGraphCustomer(entCustomer), nil
-	})
+	return service.NewCustomerService(r.client).Update(ctx, id, input)
 }
 
 // Mutation returns MutationResolver implementation.
