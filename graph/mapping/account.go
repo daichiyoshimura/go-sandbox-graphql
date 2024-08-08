@@ -5,13 +5,27 @@ import (
 	"sandbox-gql/graph/model"
 )
 
-func ToGraphAccount(account *ent.Account, items []*model.Item) *model.Account {
+func ToGraphAccount(account *ent.Account) *model.Account {
+	if account == nil {
+		return nil
+	}
 	return &model.Account{
 		ID:    account.ID,
 		Name:  account.Name,
 		Email: account.Email,
-		Items: items,
+		Items: ToGraphItems(account.Edges.Items),
 	}
+}
+
+func ToGraphAccounts(accounts []*ent.Account) []*model.Account {
+	if accounts == nil {
+		return nil
+	}
+	modelAccounts := make([]*model.Account, len(accounts))
+	for i, entAccount := range accounts {
+		modelAccounts[i] = ToGraphAccount(entAccount)
+	}
+	return modelAccounts
 }
 
 func ToEntCreateAccountInput(input model.CreateAccountInput) ent.CreateAccountInput {

@@ -18,7 +18,7 @@ func (r *mutationResolver) CreateAccount(ctx context.Context, input model.Create
 	if err != nil {
 		return nil, err
 	}
-	return mapping.ToGraphAccount(entAccount, nil), nil
+	return mapping.ToGraphAccount(entAccount), nil
 }
 
 // UpdateAccount is the resolver for the updateAccount field.
@@ -33,11 +33,7 @@ func (r *mutationResolver) CreateItem(ctx context.Context, input model.CreateIte
 	if err != nil {
 		return nil, err
 	}
-	entAccount, err := entItem.Account(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return mapping.ToGraphItem(entItem, mapping.ToGraphAccount(entAccount, nil)), nil
+	return mapping.ToGraphItem(entItem), nil
 }
 
 // UpdateItem is the resolver for the updateItem field.

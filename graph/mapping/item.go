@@ -5,19 +5,25 @@ import (
 	"sandbox-gql/graph/model"
 )
 
-func ToGraphItem(item *ent.Item, account *model.Account) *model.Item {
+func ToGraphItem(item *ent.Item) *model.Item {
+	if item == nil {
+		return nil
+	}
 	return &model.Item{
 		ID:      item.ID,
 		Name:    item.Name,
 		Price:   item.Price,
-		Account: account,
+		Account: ToGraphAccount(item.Edges.Account),
 	}
 }
 
 func ToGraphItems(items []*ent.Item) []*model.Item {
+	if items == nil {
+		return nil
+	}
 	modelItems := make([]*model.Item, len(items))
 	for i, entItem := range items {
-		modelItems[i] = ToGraphItem(entItem, nil)
+		modelItems[i] = ToGraphItem(entItem)
 	}
 	return modelItems
 }

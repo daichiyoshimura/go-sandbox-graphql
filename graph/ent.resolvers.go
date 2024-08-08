@@ -24,24 +24,16 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, erro
 
 // Accounts is the resolver for the accounts field.
 func (r *queryResolver) Accounts(ctx context.Context) ([]*model.Account, error) {
-	entAccounts, err := r.client.Account.Query().All(ctx)
+	entAccounts, err := r.client.Account.Query().WithItems().All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	modelAccounts := make([]*model.Account, len(entAccounts))
-	for i, entAccount := range entAccounts {
-		items, err := entAccount.Items(ctx)
-		if err != nil {
-			return nil, err
-		}
-		modelAccounts[i] = mapping.ToGraphAccount(entAccount, mapping.ToGraphItems(items))
-	}
-	return modelAccounts, nil
+	return mapping.ToGraphAccounts(entAccounts), nil
 }
 
 // Items is the resolver for the items field.
 func (r *queryResolver) Items(ctx context.Context) ([]*model.Item, error) {
-	entItems, err := r.client.Item.Query().All(ctx)
+	entItems, err := r.client.Item.Query().WithAccount().All(ctx)
 	if err != nil {
 		return nil, err
 	}
