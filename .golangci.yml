@@ -2,11 +2,8 @@ run:
   include:
     - "cmd"
     - "ent/schema"
-    - "graph/mapping"
-    - "graph"
+    - "graph/*.resolvers.go"
     - "internal"
-  exclude:
-    - "graph/generated.go"
   tests: true
   timeout: 5m
 linters:
