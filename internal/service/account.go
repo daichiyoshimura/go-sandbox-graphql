@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"sandbox-gql/ent"
-	"sandbox-gql/internal/mapping"
 	"sandbox-gql/graph/model"
+	"sandbox-gql/internal/mapping"
 )
 
 type AccountService struct {

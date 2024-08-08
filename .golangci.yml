@@ -5,6 +5,8 @@ run:
     - "graph/mapping"
     - "graph"
     - "internal"
+  exclude:
+    - "graph/generated.go"
   tests: true
   timeout: 5m
 linters:

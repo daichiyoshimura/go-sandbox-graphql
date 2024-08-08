@@ -5,9 +5,9 @@ import (
 	"sandbox-gql/ent"
 	"sandbox-gql/ent/account"
 	"sandbox-gql/ent/customer"
-	"sandbox-gql/internal/mapping"
 	"sandbox-gql/graph/model"
 	"sandbox-gql/internal/db"
+	"sandbox-gql/internal/mapping"
 )
 
 type CustomerService struct {
