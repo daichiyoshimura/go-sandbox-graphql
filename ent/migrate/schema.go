@@ -22,6 +22,20 @@ var (
 		Columns:    AccountsColumns,
 		PrimaryKey: []*schema.Column{AccountsColumns[0]},
 	}
+	// CustomersColumns holds the columns for the "customers" table.
+	CustomersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Size: 255},
+		{Name: "email", Type: field.TypeString, Size: 255},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// CustomersTable holds the schema information for the "customers" table.
+	CustomersTable = &schema.Table{
+		Name:       "customers",
+		Columns:    CustomersColumns,
+		PrimaryKey: []*schema.Column{CustomersColumns[0]},
+	}
 	// ItemsColumns holds the columns for the "items" table.
 	ItemsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -30,6 +44,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "account_items", Type: field.TypeInt, Nullable: true},
+		{Name: "customer_items", Type: field.TypeInt, Nullable: true},
 	}
 	// ItemsTable holds the schema information for the "items" table.
 	ItemsTable = &schema.Table{
@@ -43,15 +58,51 @@ var (
 				RefColumns: []*schema.Column{AccountsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
+			{
+				Symbol:     "items_customers_items",
+				Columns:    []*schema.Column{ItemsColumns[6]},
+				RefColumns: []*schema.Column{CustomersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// CustomerFollowsColumns holds the columns for the "customer_follows" table.
+	CustomerFollowsColumns = []*schema.Column{
+		{Name: "customer_id", Type: field.TypeInt},
+		{Name: "account_id", Type: field.TypeInt},
+	}
+	// CustomerFollowsTable holds the schema information for the "customer_follows" table.
+	CustomerFollowsTable = &schema.Table{
+		Name:       "customer_follows",
+		Columns:    CustomerFollowsColumns,
+		PrimaryKey: []*schema.Column{CustomerFollowsColumns[0], CustomerFollowsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "customer_follows_customer_id",
+				Columns:    []*schema.Column{CustomerFollowsColumns[0]},
+				RefColumns: []*schema.Column{CustomersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "customer_follows_account_id",
+				Columns:    []*schema.Column{CustomerFollowsColumns[1]},
+				RefColumns: []*schema.Column{AccountsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
 		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AccountsTable,
+		CustomersTable,
 		ItemsTable,
+		CustomerFollowsTable,
 	}
 )
 
 func init() {
 	ItemsTable.ForeignKeys[0].RefTable = AccountsTable
+	ItemsTable.ForeignKeys[1].RefTable = CustomersTable
+	CustomerFollowsTable.ForeignKeys[0].RefTable = CustomersTable
+	CustomerFollowsTable.ForeignKeys[1].RefTable = AccountsTable
 }

@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// Account is the client for interacting with the Account builders.
 	Account *AccountClient
+	// Customer is the client for interacting with the Customer builders.
+	Customer *CustomerClient
 	// Item is the client for interacting with the Item builders.
 	Item *ItemClient
 
@@ -148,6 +150,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Account = NewAccountClient(tx.config)
+	tx.Customer = NewCustomerClient(tx.config)
 	tx.Item = NewItemClient(tx.config)
 }
 

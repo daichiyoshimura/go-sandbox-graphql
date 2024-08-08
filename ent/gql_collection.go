@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"sandbox-gql/ent/account"
+	"sandbox-gql/ent/customer"
 	"sandbox-gql/ent/item"
 
 	"entgo.io/contrib/entgql"
@@ -43,6 +44,19 @@ func (a *AccountQuery) collectField(ctx context.Context, oneNode bool, opCtx *gr
 				return err
 			}
 			a.WithNamedItems(alias, func(wq *ItemQuery) {
+				*wq = *query
+			})
+
+		case "followers":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&CustomerClient{config: a.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, customerImplementors)...); err != nil {
+				return err
+			}
+			a.WithNamedFollowers(alias, func(wq *CustomerQuery) {
 				*wq = *query
 			})
 		case "name":
@@ -129,6 +143,136 @@ func newAccountPaginateArgs(rv map[string]any) *accountPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
+func (c *CustomerQuery) CollectFields(ctx context.Context, satisfies ...string) (*CustomerQuery, error) {
+	fc := graphql.GetFieldContext(ctx)
+	if fc == nil {
+		return c, nil
+	}
+	if err := c.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+		return nil, err
+	}
+	return c, nil
+}
+
+func (c *CustomerQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(customer.Columns))
+		selectedFields = []string{customer.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+
+		case "follows":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&AccountClient{config: c.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, accountImplementors)...); err != nil {
+				return err
+			}
+			c.WithNamedFollows(alias, func(wq *AccountQuery) {
+				*wq = *query
+			})
+
+		case "items":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&ItemClient{config: c.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, itemImplementors)...); err != nil {
+				return err
+			}
+			c.WithNamedItems(alias, func(wq *ItemQuery) {
+				*wq = *query
+			})
+		case "name":
+			if _, ok := fieldSeen[customer.FieldName]; !ok {
+				selectedFields = append(selectedFields, customer.FieldName)
+				fieldSeen[customer.FieldName] = struct{}{}
+			}
+		case "email":
+			if _, ok := fieldSeen[customer.FieldEmail]; !ok {
+				selectedFields = append(selectedFields, customer.FieldEmail)
+				fieldSeen[customer.FieldEmail] = struct{}{}
+			}
+		case "createdAt":
+			if _, ok := fieldSeen[customer.FieldCreatedAt]; !ok {
+				selectedFields = append(selectedFields, customer.FieldCreatedAt)
+				fieldSeen[customer.FieldCreatedAt] = struct{}{}
+			}
+		case "updatedAt":
+			if _, ok := fieldSeen[customer.FieldUpdatedAt]; !ok {
+				selectedFields = append(selectedFields, customer.FieldUpdatedAt)
+				fieldSeen[customer.FieldUpdatedAt] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		c.Select(selectedFields...)
+	}
+	return nil
+}
+
+type customerPaginateArgs struct {
+	first, last   *int
+	after, before *Cursor
+	opts          []CustomerPaginateOption
+}
+
+func newCustomerPaginateArgs(rv map[string]any) *customerPaginateArgs {
+	args := &customerPaginateArgs{}
+	if rv == nil {
+		return args
+	}
+	if v := rv[firstField]; v != nil {
+		args.first = v.(*int)
+	}
+	if v := rv[lastField]; v != nil {
+		args.last = v.(*int)
+	}
+	if v := rv[afterField]; v != nil {
+		args.after = v.(*Cursor)
+	}
+	if v := rv[beforeField]; v != nil {
+		args.before = v.(*Cursor)
+	}
+	if v, ok := rv[orderByField]; ok {
+		switch v := v.(type) {
+		case map[string]any:
+			var (
+				err1, err2 error
+				order      = &CustomerOrder{Field: &CustomerOrderField{}, Direction: entgql.OrderDirectionAsc}
+			)
+			if d, ok := v[directionField]; ok {
+				err1 = order.Direction.UnmarshalGQL(d)
+			}
+			if f, ok := v[fieldField]; ok {
+				err2 = order.Field.UnmarshalGQL(f)
+			}
+			if err1 == nil && err2 == nil {
+				args.opts = append(args.opts, WithCustomerOrder(order))
+			}
+		case *CustomerOrder:
+			if v != nil {
+				args.opts = append(args.opts, WithCustomerOrder(v))
+			}
+		}
+	}
+	if v, ok := rv[whereField].(*CustomerWhereInput); ok {
+		args.opts = append(args.opts, WithCustomerFilter(v.Filter))
+	}
+	return args
+}
+
+// CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
 func (i *ItemQuery) CollectFields(ctx context.Context, satisfies ...string) (*ItemQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
@@ -150,7 +294,7 @@ func (i *ItemQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
 
-		case "account":
+		case "owner":
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
@@ -159,7 +303,7 @@ func (i *ItemQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, accountImplementors)...); err != nil {
 				return err
 			}
-			i.withAccount = query
+			i.withOwner = query
 		case "name":
 			if _, ok := fieldSeen[item.FieldName]; !ok {
 				selectedFields = append(selectedFields, item.FieldName)

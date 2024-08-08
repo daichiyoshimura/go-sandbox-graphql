@@ -10,13 +10,13 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// Account holds the schema definition for the Account entity.
-type Account struct {
+// Customer holds the schema definition for the Customer entity.
+type Customer struct {
 	ent.Schema
 }
 
-// Fields of the Account.
-func (Account) Fields() []ent.Field {
+// Fields of the Customer.
+func (Customer) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").NotEmpty().MaxLen(255).Annotations(entgql.OrderField("NAME")),
 		field.String("email").NotEmpty().MaxLen(255).Annotations(entgql.OrderField("EMAIL")),
@@ -25,15 +25,15 @@ func (Account) Fields() []ent.Field {
 	}
 }
 
-// Edges of the Account.
-func (Account) Edges() []ent.Edge {
+// Edges of the Customer.
+func (Customer) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.To("follows", Account.Type),
 		edge.To("items", Item.Type),
-		edge.From("followers", Customer.Type).Ref("follows"),
 	}
 }
 
-func (Account) Annotations() []schema.Annotation {
+func (Customer) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.QueryField(),
 		entgql.Mutations(entgql.MutationCreate(), entgql.MutationUpdate()),

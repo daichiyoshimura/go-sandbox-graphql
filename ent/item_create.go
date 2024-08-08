@@ -69,23 +69,23 @@ func (ic *ItemCreate) SetNillableUpdatedAt(t *time.Time) *ItemCreate {
 	return ic
 }
 
-// SetAccountID sets the "account" edge to the Account entity by ID.
-func (ic *ItemCreate) SetAccountID(id int) *ItemCreate {
-	ic.mutation.SetAccountID(id)
+// SetOwnerID sets the "owner" edge to the Account entity by ID.
+func (ic *ItemCreate) SetOwnerID(id int) *ItemCreate {
+	ic.mutation.SetOwnerID(id)
 	return ic
 }
 
-// SetNillableAccountID sets the "account" edge to the Account entity by ID if the given value is not nil.
-func (ic *ItemCreate) SetNillableAccountID(id *int) *ItemCreate {
+// SetNillableOwnerID sets the "owner" edge to the Account entity by ID if the given value is not nil.
+func (ic *ItemCreate) SetNillableOwnerID(id *int) *ItemCreate {
 	if id != nil {
-		ic = ic.SetAccountID(*id)
+		ic = ic.SetOwnerID(*id)
 	}
 	return ic
 }
 
-// SetAccount sets the "account" edge to the Account entity.
-func (ic *ItemCreate) SetAccount(a *Account) *ItemCreate {
-	return ic.SetAccountID(a.ID)
+// SetOwner sets the "owner" edge to the Account entity.
+func (ic *ItemCreate) SetOwner(a *Account) *ItemCreate {
+	return ic.SetOwnerID(a.ID)
 }
 
 // Mutation returns the ItemMutation object of the builder.
@@ -203,12 +203,12 @@ func (ic *ItemCreate) createSpec() (*Item, *sqlgraph.CreateSpec) {
 		_spec.SetField(item.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if nodes := ic.mutation.AccountIDs(); len(nodes) > 0 {
+	if nodes := ic.mutation.OwnerIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   item.AccountTable,
-			Columns: []string{item.AccountColumn},
+			Table:   item.OwnerTable,
+			Columns: []string{item.OwnerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeInt),

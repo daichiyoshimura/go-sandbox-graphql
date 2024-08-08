@@ -28,15 +28,16 @@ type Item struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ItemQuery when eager-loading is set.
-	Edges         ItemEdges `json:"edges"`
-	account_items *int
-	selectValues  sql.SelectValues
+	Edges          ItemEdges `json:"edges"`
+	account_items  *int
+	customer_items *int
+	selectValues   sql.SelectValues
 }
 
 // ItemEdges holds the relations/edges for other nodes in the graph.
 type ItemEdges struct {
-	// Account holds the value of the account edge.
-	Account *Account `json:"account,omitempty"`
+	// Owner holds the value of the owner edge.
+	Owner *Account `json:"owner,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
@@ -44,15 +45,15 @@ type ItemEdges struct {
 	totalCount [1]map[string]int
 }
 
-// AccountOrErr returns the Account value or an error if the edge
+// OwnerOrErr returns the Owner value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e ItemEdges) AccountOrErr() (*Account, error) {
-	if e.Account != nil {
-		return e.Account, nil
+func (e ItemEdges) OwnerOrErr() (*Account, error) {
+	if e.Owner != nil {
+		return e.Owner, nil
 	} else if e.loadedTypes[0] {
 		return nil, &NotFoundError{label: account.Label}
 	}
-	return nil, &NotLoadedError{edge: "account"}
+	return nil, &NotLoadedError{edge: "owner"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -67,6 +68,8 @@ func (*Item) scanValues(columns []string) ([]any, error) {
 		case item.FieldCreatedAt, item.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case item.ForeignKeys[0]: // account_items
+			values[i] = new(sql.NullInt64)
+		case item.ForeignKeys[1]: // customer_items
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -120,6 +123,13 @@ func (i *Item) assignValues(columns []string, values []any) error {
 				i.account_items = new(int)
 				*i.account_items = int(value.Int64)
 			}
+		case item.ForeignKeys[1]:
+			if value, ok := values[j].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field customer_items", value)
+			} else if value.Valid {
+				i.customer_items = new(int)
+				*i.customer_items = int(value.Int64)
+			}
 		default:
 			i.selectValues.Set(columns[j], values[j])
 		}
@@ -133,9 +143,9 @@ func (i *Item) Value(name string) (ent.Value, error) {
 	return i.selectValues.Get(name)
 }
 
-// QueryAccount queries the "account" edge of the Item entity.
-func (i *Item) QueryAccount() *AccountQuery {
-	return NewItemClient(i.config).QueryAccount(i)
+// QueryOwner queries the "owner" edge of the Item entity.
+func (i *Item) QueryOwner() *AccountQuery {
+	return NewItemClient(i.config).QueryOwner(i)
 }
 
 // Update returns a builder for updating this Item.

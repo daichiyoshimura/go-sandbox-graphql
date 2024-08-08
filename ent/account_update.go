@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"sandbox-gql/ent/account"
+	"sandbox-gql/ent/customer"
 	"sandbox-gql/ent/item"
 	"sandbox-gql/ent/predicate"
 	"time"
@@ -100,6 +101,21 @@ func (au *AccountUpdate) AddItems(i ...*Item) *AccountUpdate {
 	return au.AddItemIDs(ids...)
 }
 
+// AddFollowerIDs adds the "followers" edge to the Customer entity by IDs.
+func (au *AccountUpdate) AddFollowerIDs(ids ...int) *AccountUpdate {
+	au.mutation.AddFollowerIDs(ids...)
+	return au
+}
+
+// AddFollowers adds the "followers" edges to the Customer entity.
+func (au *AccountUpdate) AddFollowers(c ...*Customer) *AccountUpdate {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return au.AddFollowerIDs(ids...)
+}
+
 // Mutation returns the AccountMutation object of the builder.
 func (au *AccountUpdate) Mutation() *AccountMutation {
 	return au.mutation
@@ -124,6 +140,27 @@ func (au *AccountUpdate) RemoveItems(i ...*Item) *AccountUpdate {
 		ids[j] = i[j].ID
 	}
 	return au.RemoveItemIDs(ids...)
+}
+
+// ClearFollowers clears all "followers" edges to the Customer entity.
+func (au *AccountUpdate) ClearFollowers() *AccountUpdate {
+	au.mutation.ClearFollowers()
+	return au
+}
+
+// RemoveFollowerIDs removes the "followers" edge to Customer entities by IDs.
+func (au *AccountUpdate) RemoveFollowerIDs(ids ...int) *AccountUpdate {
+	au.mutation.RemoveFollowerIDs(ids...)
+	return au
+}
+
+// RemoveFollowers removes "followers" edges to Customer entities.
+func (au *AccountUpdate) RemoveFollowers(c ...*Customer) *AccountUpdate {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return au.RemoveFollowerIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -237,6 +274,51 @@ func (au *AccountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if au.mutation.FollowersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   account.FollowersTable,
+			Columns: account.FollowersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedFollowersIDs(); len(nodes) > 0 && !au.mutation.FollowersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   account.FollowersTable,
+			Columns: account.FollowersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.FollowersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   account.FollowersTable,
+			Columns: account.FollowersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{account.Label}
@@ -328,6 +410,21 @@ func (auo *AccountUpdateOne) AddItems(i ...*Item) *AccountUpdateOne {
 	return auo.AddItemIDs(ids...)
 }
 
+// AddFollowerIDs adds the "followers" edge to the Customer entity by IDs.
+func (auo *AccountUpdateOne) AddFollowerIDs(ids ...int) *AccountUpdateOne {
+	auo.mutation.AddFollowerIDs(ids...)
+	return auo
+}
+
+// AddFollowers adds the "followers" edges to the Customer entity.
+func (auo *AccountUpdateOne) AddFollowers(c ...*Customer) *AccountUpdateOne {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return auo.AddFollowerIDs(ids...)
+}
+
 // Mutation returns the AccountMutation object of the builder.
 func (auo *AccountUpdateOne) Mutation() *AccountMutation {
 	return auo.mutation
@@ -352,6 +449,27 @@ func (auo *AccountUpdateOne) RemoveItems(i ...*Item) *AccountUpdateOne {
 		ids[j] = i[j].ID
 	}
 	return auo.RemoveItemIDs(ids...)
+}
+
+// ClearFollowers clears all "followers" edges to the Customer entity.
+func (auo *AccountUpdateOne) ClearFollowers() *AccountUpdateOne {
+	auo.mutation.ClearFollowers()
+	return auo
+}
+
+// RemoveFollowerIDs removes the "followers" edge to Customer entities by IDs.
+func (auo *AccountUpdateOne) RemoveFollowerIDs(ids ...int) *AccountUpdateOne {
+	auo.mutation.RemoveFollowerIDs(ids...)
+	return auo
+}
+
+// RemoveFollowers removes "followers" edges to Customer entities.
+func (auo *AccountUpdateOne) RemoveFollowers(c ...*Customer) *AccountUpdateOne {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return auo.RemoveFollowerIDs(ids...)
 }
 
 // Where appends a list predicates to the AccountUpdate builder.
@@ -488,6 +606,51 @@ func (auo *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err e
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if auo.mutation.FollowersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   account.FollowersTable,
+			Columns: account.FollowersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedFollowersIDs(); len(nodes) > 0 && !auo.mutation.FollowersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   account.FollowersTable,
+			Columns: account.FollowersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.FollowersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   account.FollowersTable,
+			Columns: account.FollowersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

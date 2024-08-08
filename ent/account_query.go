@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"sandbox-gql/ent/account"
+	"sandbox-gql/ent/customer"
 	"sandbox-gql/ent/item"
 	"sandbox-gql/ent/predicate"
 
@@ -20,14 +21,16 @@ import (
 // AccountQuery is the builder for querying Account entities.
 type AccountQuery struct {
 	config
-	ctx            *QueryContext
-	order          []account.OrderOption
-	inters         []Interceptor
-	predicates     []predicate.Account
-	withItems      *ItemQuery
-	modifiers      []func(*sql.Selector)
-	loadTotal      []func(context.Context, []*Account) error
-	withNamedItems map[string]*ItemQuery
+	ctx                *QueryContext
+	order              []account.OrderOption
+	inters             []Interceptor
+	predicates         []predicate.Account
+	withItems          *ItemQuery
+	withFollowers      *CustomerQuery
+	modifiers          []func(*sql.Selector)
+	loadTotal          []func(context.Context, []*Account) error
+	withNamedItems     map[string]*ItemQuery
+	withNamedFollowers map[string]*CustomerQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -79,6 +82,28 @@ func (aq *AccountQuery) QueryItems() *ItemQuery {
 			sqlgraph.From(account.Table, account.FieldID, selector),
 			sqlgraph.To(item.Table, item.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, account.ItemsTable, account.ItemsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryFollowers chains the current query on the "followers" edge.
+func (aq *AccountQuery) QueryFollowers() *CustomerQuery {
+	query := (&CustomerClient{config: aq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := aq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := aq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(account.Table, account.FieldID, selector),
+			sqlgraph.To(customer.Table, customer.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, account.FollowersTable, account.FollowersPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
@@ -273,12 +298,13 @@ func (aq *AccountQuery) Clone() *AccountQuery {
 		return nil
 	}
 	return &AccountQuery{
-		config:     aq.config,
-		ctx:        aq.ctx.Clone(),
-		order:      append([]account.OrderOption{}, aq.order...),
-		inters:     append([]Interceptor{}, aq.inters...),
-		predicates: append([]predicate.Account{}, aq.predicates...),
-		withItems:  aq.withItems.Clone(),
+		config:        aq.config,
+		ctx:           aq.ctx.Clone(),
+		order:         append([]account.OrderOption{}, aq.order...),
+		inters:        append([]Interceptor{}, aq.inters...),
+		predicates:    append([]predicate.Account{}, aq.predicates...),
+		withItems:     aq.withItems.Clone(),
+		withFollowers: aq.withFollowers.Clone(),
 		// clone intermediate query.
 		sql:  aq.sql.Clone(),
 		path: aq.path,
@@ -293,6 +319,17 @@ func (aq *AccountQuery) WithItems(opts ...func(*ItemQuery)) *AccountQuery {
 		opt(query)
 	}
 	aq.withItems = query
+	return aq
+}
+
+// WithFollowers tells the query-builder to eager-load the nodes that are connected to
+// the "followers" edge. The optional arguments are used to configure the query builder of the edge.
+func (aq *AccountQuery) WithFollowers(opts ...func(*CustomerQuery)) *AccountQuery {
+	query := (&CustomerClient{config: aq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	aq.withFollowers = query
 	return aq
 }
 
@@ -374,8 +411,9 @@ func (aq *AccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Acco
 	var (
 		nodes       = []*Account{}
 		_spec       = aq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			aq.withItems != nil,
+			aq.withFollowers != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -406,10 +444,24 @@ func (aq *AccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Acco
 			return nil, err
 		}
 	}
+	if query := aq.withFollowers; query != nil {
+		if err := aq.loadFollowers(ctx, query, nodes,
+			func(n *Account) { n.Edges.Followers = []*Customer{} },
+			func(n *Account, e *Customer) { n.Edges.Followers = append(n.Edges.Followers, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for name, query := range aq.withNamedItems {
 		if err := aq.loadItems(ctx, query, nodes,
 			func(n *Account) { n.appendNamedItems(name) },
 			func(n *Account, e *Item) { n.appendNamedItems(name, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range aq.withNamedFollowers {
+		if err := aq.loadFollowers(ctx, query, nodes,
+			func(n *Account) { n.appendNamedFollowers(name) },
+			func(n *Account, e *Customer) { n.appendNamedFollowers(name, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -449,6 +501,67 @@ func (aq *AccountQuery) loadItems(ctx context.Context, query *ItemQuery, nodes [
 			return fmt.Errorf(`unexpected referenced foreign-key "account_items" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
+	}
+	return nil
+}
+func (aq *AccountQuery) loadFollowers(ctx context.Context, query *CustomerQuery, nodes []*Account, init func(*Account), assign func(*Account, *Customer)) error {
+	edgeIDs := make([]driver.Value, len(nodes))
+	byID := make(map[int]*Account)
+	nids := make(map[int]map[*Account]struct{})
+	for i, node := range nodes {
+		edgeIDs[i] = node.ID
+		byID[node.ID] = node
+		if init != nil {
+			init(node)
+		}
+	}
+	query.Where(func(s *sql.Selector) {
+		joinT := sql.Table(account.FollowersTable)
+		s.Join(joinT).On(s.C(customer.FieldID), joinT.C(account.FollowersPrimaryKey[0]))
+		s.Where(sql.InValues(joinT.C(account.FollowersPrimaryKey[1]), edgeIDs...))
+		columns := s.SelectedColumns()
+		s.Select(joinT.C(account.FollowersPrimaryKey[1]))
+		s.AppendSelect(columns...)
+		s.SetDistinct(false)
+	})
+	if err := query.prepareQuery(ctx); err != nil {
+		return err
+	}
+	qr := QuerierFunc(func(ctx context.Context, q Query) (Value, error) {
+		return query.sqlAll(ctx, func(_ context.Context, spec *sqlgraph.QuerySpec) {
+			assign := spec.Assign
+			values := spec.ScanValues
+			spec.ScanValues = func(columns []string) ([]any, error) {
+				values, err := values(columns[1:])
+				if err != nil {
+					return nil, err
+				}
+				return append([]any{new(sql.NullInt64)}, values...), nil
+			}
+			spec.Assign = func(columns []string, values []any) error {
+				outValue := int(values[0].(*sql.NullInt64).Int64)
+				inValue := int(values[1].(*sql.NullInt64).Int64)
+				if nids[inValue] == nil {
+					nids[inValue] = map[*Account]struct{}{byID[outValue]: {}}
+					return assign(columns[1:], values[1:])
+				}
+				nids[inValue][byID[outValue]] = struct{}{}
+				return nil
+			}
+		})
+	})
+	neighbors, err := withInterceptors[[]*Customer](ctx, query, qr, query.inters)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected "followers" node returned %v`, n.ID)
+		}
+		for kn := range nodes {
+			assign(kn, n)
+		}
 	}
 	return nil
 }
@@ -548,6 +661,20 @@ func (aq *AccountQuery) WithNamedItems(name string, opts ...func(*ItemQuery)) *A
 		aq.withNamedItems = make(map[string]*ItemQuery)
 	}
 	aq.withNamedItems[name] = query
+	return aq
+}
+
+// WithNamedFollowers tells the query-builder to eager-load the nodes that are connected to the "followers"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (aq *AccountQuery) WithNamedFollowers(name string, opts ...func(*CustomerQuery)) *AccountQuery {
+	query := (&CustomerClient{config: aq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if aq.withNamedFollowers == nil {
+		aq.withNamedFollowers = make(map[string]*CustomerQuery)
+	}
+	aq.withNamedFollowers[name] = query
 	return aq
 }
 

@@ -92,23 +92,23 @@ func (iu *ItemUpdate) SetNillableUpdatedAt(t *time.Time) *ItemUpdate {
 	return iu
 }
 
-// SetAccountID sets the "account" edge to the Account entity by ID.
-func (iu *ItemUpdate) SetAccountID(id int) *ItemUpdate {
-	iu.mutation.SetAccountID(id)
+// SetOwnerID sets the "owner" edge to the Account entity by ID.
+func (iu *ItemUpdate) SetOwnerID(id int) *ItemUpdate {
+	iu.mutation.SetOwnerID(id)
 	return iu
 }
 
-// SetNillableAccountID sets the "account" edge to the Account entity by ID if the given value is not nil.
-func (iu *ItemUpdate) SetNillableAccountID(id *int) *ItemUpdate {
+// SetNillableOwnerID sets the "owner" edge to the Account entity by ID if the given value is not nil.
+func (iu *ItemUpdate) SetNillableOwnerID(id *int) *ItemUpdate {
 	if id != nil {
-		iu = iu.SetAccountID(*id)
+		iu = iu.SetOwnerID(*id)
 	}
 	return iu
 }
 
-// SetAccount sets the "account" edge to the Account entity.
-func (iu *ItemUpdate) SetAccount(a *Account) *ItemUpdate {
-	return iu.SetAccountID(a.ID)
+// SetOwner sets the "owner" edge to the Account entity.
+func (iu *ItemUpdate) SetOwner(a *Account) *ItemUpdate {
+	return iu.SetOwnerID(a.ID)
 }
 
 // Mutation returns the ItemMutation object of the builder.
@@ -116,9 +116,9 @@ func (iu *ItemUpdate) Mutation() *ItemMutation {
 	return iu.mutation
 }
 
-// ClearAccount clears the "account" edge to the Account entity.
-func (iu *ItemUpdate) ClearAccount() *ItemUpdate {
-	iu.mutation.ClearAccount()
+// ClearOwner clears the "owner" edge to the Account entity.
+func (iu *ItemUpdate) ClearOwner() *ItemUpdate {
+	iu.mutation.ClearOwner()
 	return iu
 }
 
@@ -191,12 +191,12 @@ func (iu *ItemUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := iu.mutation.UpdatedAt(); ok {
 		_spec.SetField(item.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if iu.mutation.AccountCleared() {
+	if iu.mutation.OwnerCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   item.AccountTable,
-			Columns: []string{item.AccountColumn},
+			Table:   item.OwnerTable,
+			Columns: []string{item.OwnerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeInt),
@@ -204,12 +204,12 @@ func (iu *ItemUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := iu.mutation.AccountIDs(); len(nodes) > 0 {
+	if nodes := iu.mutation.OwnerIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   item.AccountTable,
-			Columns: []string{item.AccountColumn},
+			Table:   item.OwnerTable,
+			Columns: []string{item.OwnerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeInt),
@@ -303,23 +303,23 @@ func (iuo *ItemUpdateOne) SetNillableUpdatedAt(t *time.Time) *ItemUpdateOne {
 	return iuo
 }
 
-// SetAccountID sets the "account" edge to the Account entity by ID.
-func (iuo *ItemUpdateOne) SetAccountID(id int) *ItemUpdateOne {
-	iuo.mutation.SetAccountID(id)
+// SetOwnerID sets the "owner" edge to the Account entity by ID.
+func (iuo *ItemUpdateOne) SetOwnerID(id int) *ItemUpdateOne {
+	iuo.mutation.SetOwnerID(id)
 	return iuo
 }
 
-// SetNillableAccountID sets the "account" edge to the Account entity by ID if the given value is not nil.
-func (iuo *ItemUpdateOne) SetNillableAccountID(id *int) *ItemUpdateOne {
+// SetNillableOwnerID sets the "owner" edge to the Account entity by ID if the given value is not nil.
+func (iuo *ItemUpdateOne) SetNillableOwnerID(id *int) *ItemUpdateOne {
 	if id != nil {
-		iuo = iuo.SetAccountID(*id)
+		iuo = iuo.SetOwnerID(*id)
 	}
 	return iuo
 }
 
-// SetAccount sets the "account" edge to the Account entity.
-func (iuo *ItemUpdateOne) SetAccount(a *Account) *ItemUpdateOne {
-	return iuo.SetAccountID(a.ID)
+// SetOwner sets the "owner" edge to the Account entity.
+func (iuo *ItemUpdateOne) SetOwner(a *Account) *ItemUpdateOne {
+	return iuo.SetOwnerID(a.ID)
 }
 
 // Mutation returns the ItemMutation object of the builder.
@@ -327,9 +327,9 @@ func (iuo *ItemUpdateOne) Mutation() *ItemMutation {
 	return iuo.mutation
 }
 
-// ClearAccount clears the "account" edge to the Account entity.
-func (iuo *ItemUpdateOne) ClearAccount() *ItemUpdateOne {
-	iuo.mutation.ClearAccount()
+// ClearOwner clears the "owner" edge to the Account entity.
+func (iuo *ItemUpdateOne) ClearOwner() *ItemUpdateOne {
+	iuo.mutation.ClearOwner()
 	return iuo
 }
 
@@ -432,12 +432,12 @@ func (iuo *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) 
 	if value, ok := iuo.mutation.UpdatedAt(); ok {
 		_spec.SetField(item.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if iuo.mutation.AccountCleared() {
+	if iuo.mutation.OwnerCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   item.AccountTable,
-			Columns: []string{item.AccountColumn},
+			Table:   item.OwnerTable,
+			Columns: []string{item.OwnerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeInt),
@@ -445,12 +445,12 @@ func (iuo *ItemUpdateOne) sqlSave(ctx context.Context) (_node *Item, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := iuo.mutation.AccountIDs(); len(nodes) > 0 {
+	if nodes := iuo.mutation.OwnerIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   item.AccountTable,
-			Columns: []string{item.AccountColumn},
+			Table:   item.OwnerTable,
+			Columns: []string{item.OwnerColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(account.FieldID, field.TypeInt),

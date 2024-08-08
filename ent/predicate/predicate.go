@@ -9,5 +9,8 @@ import (
 // Account is the predicate function for account builders.
 type Account func(*sql.Selector)
 
+// Customer is the predicate function for customer builders.
+type Customer func(*sql.Selector)
+
 // Item is the predicate function for item builders.
 type Item func(*sql.Selector)

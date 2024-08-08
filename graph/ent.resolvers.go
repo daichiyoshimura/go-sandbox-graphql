@@ -31,9 +31,20 @@ func (r *queryResolver) Accounts(ctx context.Context) ([]*model.Account, error) 
 	return mapping.ToGraphAccounts(entAccounts), nil
 }
 
+// Customers is the resolver for the customers field.
+func (r *queryResolver) Customers(ctx context.Context) ([]*model.Customer, error) {
+	entCustomers, err := r.client.Customer.Query().WithFollows(func(q *ent.AccountQuery) {
+		q.WithItems()
+	}).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return mapping.ToGraphCustomers(entCustomers), nil
+}
+
 // Items is the resolver for the items field.
 func (r *queryResolver) Items(ctx context.Context) ([]*model.Item, error) {
-	entItems, err := r.client.Item.Query().WithAccount().All(ctx)
+	entItems, err := r.client.Item.Query().WithOwner().All(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"sandbox-gql/ent/account"
+	"sandbox-gql/ent/customer"
 	"sandbox-gql/ent/item"
 	"time"
 
@@ -74,6 +75,21 @@ func (ac *AccountCreate) AddItems(i ...*Item) *AccountCreate {
 		ids[j] = i[j].ID
 	}
 	return ac.AddItemIDs(ids...)
+}
+
+// AddFollowerIDs adds the "followers" edge to the Customer entity by IDs.
+func (ac *AccountCreate) AddFollowerIDs(ids ...int) *AccountCreate {
+	ac.mutation.AddFollowerIDs(ids...)
+	return ac
+}
+
+// AddFollowers adds the "followers" edges to the Customer entity.
+func (ac *AccountCreate) AddFollowers(c ...*Customer) *AccountCreate {
+	ids := make([]int, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return ac.AddFollowerIDs(ids...)
 }
 
 // Mutation returns the AccountMutation object of the builder.
@@ -196,6 +212,22 @@ func (ac *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(item.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ac.mutation.FollowersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   account.FollowersTable,
+			Columns: account.FollowersPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(customer.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

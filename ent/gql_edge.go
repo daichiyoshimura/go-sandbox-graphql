@@ -20,10 +20,46 @@ func (a *Account) Items(ctx context.Context) (result []*Item, err error) {
 	return result, err
 }
 
-func (i *Item) Account(ctx context.Context) (*Account, error) {
-	result, err := i.Edges.AccountOrErr()
+func (a *Account) Followers(ctx context.Context) (result []*Customer, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = a.NamedFollowers(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = a.Edges.FollowersOrErr()
+	}
 	if IsNotLoaded(err) {
-		result, err = i.QueryAccount().Only(ctx)
+		result, err = a.QueryFollowers().All(ctx)
+	}
+	return result, err
+}
+
+func (c *Customer) Follows(ctx context.Context) (result []*Account, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = c.NamedFollows(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = c.Edges.FollowsOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = c.QueryFollows().All(ctx)
+	}
+	return result, err
+}
+
+func (c *Customer) Items(ctx context.Context) (result []*Item, err error) {
+	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
+		result, err = c.NamedItems(graphql.GetFieldContext(ctx).Field.Alias)
+	} else {
+		result, err = c.Edges.ItemsOrErr()
+	}
+	if IsNotLoaded(err) {
+		result, err = c.QueryItems().All(ctx)
+	}
+	return result, err
+}
+
+func (i *Item) Owner(ctx context.Context) (*Account, error) {
+	result, err := i.Edges.OwnerOrErr()
+	if IsNotLoaded(err) {
+		result, err = i.QueryOwner().Only(ctx)
 	}
 	return result, MaskNotFound(err)
 }

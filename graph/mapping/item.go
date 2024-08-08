@@ -10,10 +10,10 @@ func ToGraphItem(item *ent.Item) *model.Item {
 		return nil
 	}
 	return &model.Item{
-		ID:      item.ID,
-		Name:    item.Name,
-		Price:   item.Price,
-		Account: ToGraphAccount(item.Edges.Account),
+		ID:    item.ID,
+		Name:  item.Name,
+		Price: item.Price,
+		Owner: ToGraphAccount(item.Edges.Owner),
 	}
 }
 
@@ -30,8 +30,8 @@ func ToGraphItems(items []*ent.Item) []*model.Item {
 
 func ToEntCreateItemInput(input model.CreateItemInput) ent.CreateItemInput {
 	return ent.CreateItemInput{
-		Name:      input.Name,
-		Price:     input.Price,
-		AccountID: input.AccountID,
+		Name:    input.Name,
+		Price:   input.Price,
+		OwnerID: input.OwnerID,
 	}
 }

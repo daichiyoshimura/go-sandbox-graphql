@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"sandbox-gql/ent/account"
+	"sandbox-gql/ent/customer"
 	"sandbox-gql/ent/item"
 	"strconv"
 
@@ -410,6 +411,320 @@ func (a *Account) ToEdge(order *AccountOrder) *AccountEdge {
 	return &AccountEdge{
 		Node:   a,
 		Cursor: order.Field.toCursor(a),
+	}
+}
+
+// CustomerEdge is the edge representation of Customer.
+type CustomerEdge struct {
+	Node   *Customer `json:"node"`
+	Cursor Cursor    `json:"cursor"`
+}
+
+// CustomerConnection is the connection containing edges to Customer.
+type CustomerConnection struct {
+	Edges      []*CustomerEdge `json:"edges"`
+	PageInfo   PageInfo        `json:"pageInfo"`
+	TotalCount int             `json:"totalCount"`
+}
+
+func (c *CustomerConnection) build(nodes []*Customer, pager *customerPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *Customer
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *Customer {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *Customer {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*CustomerEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &CustomerEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// CustomerPaginateOption enables pagination customization.
+type CustomerPaginateOption func(*customerPager) error
+
+// WithCustomerOrder configures pagination ordering.
+func WithCustomerOrder(order *CustomerOrder) CustomerPaginateOption {
+	if order == nil {
+		order = DefaultCustomerOrder
+	}
+	o := *order
+	return func(pager *customerPager) error {
+		if err := o.Direction.Validate(); err != nil {
+			return err
+		}
+		if o.Field == nil {
+			o.Field = DefaultCustomerOrder.Field
+		}
+		pager.order = &o
+		return nil
+	}
+}
+
+// WithCustomerFilter configures pagination filter.
+func WithCustomerFilter(filter func(*CustomerQuery) (*CustomerQuery, error)) CustomerPaginateOption {
+	return func(pager *customerPager) error {
+		if filter == nil {
+			return errors.New("CustomerQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type customerPager struct {
+	reverse bool
+	order   *CustomerOrder
+	filter  func(*CustomerQuery) (*CustomerQuery, error)
+}
+
+func newCustomerPager(opts []CustomerPaginateOption, reverse bool) (*customerPager, error) {
+	pager := &customerPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	if pager.order == nil {
+		pager.order = DefaultCustomerOrder
+	}
+	return pager, nil
+}
+
+func (p *customerPager) applyFilter(query *CustomerQuery) (*CustomerQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *customerPager) toCursor(c *Customer) Cursor {
+	return p.order.Field.toCursor(c)
+}
+
+func (p *customerPager) applyCursors(query *CustomerQuery, after, before *Cursor) (*CustomerQuery, error) {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultCustomerOrder.Field.column, p.order.Field.column, direction) {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *customerPager) applyOrder(query *CustomerQuery) *CustomerQuery {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
+	if p.order.Field != DefaultCustomerOrder.Field {
+		query = query.Order(DefaultCustomerOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return query
+}
+
+func (p *customerPager) orderExpr(query *CustomerQuery) sql.Querier {
+	direction := p.order.Direction
+	if p.reverse {
+		direction = direction.Reverse()
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(p.order.Field.column)
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
+		if p.order.Field != DefaultCustomerOrder.Field {
+			b.Comma().Ident(DefaultCustomerOrder.Field.column).Pad().WriteString(string(direction))
+		}
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to Customer.
+func (c *CustomerQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...CustomerPaginateOption,
+) (*CustomerConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newCustomerPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if c, err = pager.applyFilter(c); err != nil {
+		return nil, err
+	}
+	conn := &CustomerConnection{Edges: []*CustomerEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := c.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if c, err = pager.applyCursors(c, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		c.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := c.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	c = pager.applyOrder(c)
+	nodes, err := c.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+var (
+	// CustomerOrderFieldName orders Customer by name.
+	CustomerOrderFieldName = &CustomerOrderField{
+		Value: func(c *Customer) (ent.Value, error) {
+			return c.Name, nil
+		},
+		column: customer.FieldName,
+		toTerm: customer.ByName,
+		toCursor: func(c *Customer) Cursor {
+			return Cursor{
+				ID:    c.ID,
+				Value: c.Name,
+			}
+		},
+	}
+	// CustomerOrderFieldEmail orders Customer by email.
+	CustomerOrderFieldEmail = &CustomerOrderField{
+		Value: func(c *Customer) (ent.Value, error) {
+			return c.Email, nil
+		},
+		column: customer.FieldEmail,
+		toTerm: customer.ByEmail,
+		toCursor: func(c *Customer) Cursor {
+			return Cursor{
+				ID:    c.ID,
+				Value: c.Email,
+			}
+		},
+	}
+)
+
+// String implement fmt.Stringer interface.
+func (f CustomerOrderField) String() string {
+	var str string
+	switch f.column {
+	case CustomerOrderFieldName.column:
+		str = "NAME"
+	case CustomerOrderFieldEmail.column:
+		str = "EMAIL"
+	}
+	return str
+}
+
+// MarshalGQL implements graphql.Marshaler interface.
+func (f CustomerOrderField) MarshalGQL(w io.Writer) {
+	io.WriteString(w, strconv.Quote(f.String()))
+}
+
+// UnmarshalGQL implements graphql.Unmarshaler interface.
+func (f *CustomerOrderField) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("CustomerOrderField %T must be a string", v)
+	}
+	switch str {
+	case "NAME":
+		*f = *CustomerOrderFieldName
+	case "EMAIL":
+		*f = *CustomerOrderFieldEmail
+	default:
+		return fmt.Errorf("%s is not a valid CustomerOrderField", str)
+	}
+	return nil
+}
+
+// CustomerOrderField defines the ordering field of Customer.
+type CustomerOrderField struct {
+	// Value extracts the ordering value from the given Customer.
+	Value    func(*Customer) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) customer.OrderOption
+	toCursor func(*Customer) Cursor
+}
+
+// CustomerOrder defines the ordering of Customer.
+type CustomerOrder struct {
+	Direction OrderDirection      `json:"direction"`
+	Field     *CustomerOrderField `json:"field"`
+}
+
+// DefaultCustomerOrder is the default ordering of Customer.
+var DefaultCustomerOrder = &CustomerOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &CustomerOrderField{
+		Value: func(c *Customer) (ent.Value, error) {
+			return c.ID, nil
+		},
+		column: customer.FieldID,
+		toTerm: customer.ByID,
+		toCursor: func(c *Customer) Cursor {
+			return Cursor{ID: c.ID}
+		},
+	},
+}
+
+// ToEdge converts Customer into CustomerEdge.
+func (c *Customer) ToEdge(order *CustomerOrder) *CustomerEdge {
+	if order == nil {
+		order = DefaultCustomerOrder
+	}
+	return &CustomerEdge{
+		Node:   c,
+		Cursor: order.Field.toCursor(c),
 	}
 }
 

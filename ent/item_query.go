@@ -19,14 +19,14 @@ import (
 // ItemQuery is the builder for querying Item entities.
 type ItemQuery struct {
 	config
-	ctx         *QueryContext
-	order       []item.OrderOption
-	inters      []Interceptor
-	predicates  []predicate.Item
-	withAccount *AccountQuery
-	withFKs     bool
-	modifiers   []func(*sql.Selector)
-	loadTotal   []func(context.Context, []*Item) error
+	ctx        *QueryContext
+	order      []item.OrderOption
+	inters     []Interceptor
+	predicates []predicate.Item
+	withOwner  *AccountQuery
+	withFKs    bool
+	modifiers  []func(*sql.Selector)
+	loadTotal  []func(context.Context, []*Item) error
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -63,8 +63,8 @@ func (iq *ItemQuery) Order(o ...item.OrderOption) *ItemQuery {
 	return iq
 }
 
-// QueryAccount chains the current query on the "account" edge.
-func (iq *ItemQuery) QueryAccount() *AccountQuery {
+// QueryOwner chains the current query on the "owner" edge.
+func (iq *ItemQuery) QueryOwner() *AccountQuery {
 	query := (&AccountClient{config: iq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := iq.prepareQuery(ctx); err != nil {
@@ -77,7 +77,7 @@ func (iq *ItemQuery) QueryAccount() *AccountQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(item.Table, item.FieldID, selector),
 			sqlgraph.To(account.Table, account.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, item.AccountTable, item.AccountColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, item.OwnerTable, item.OwnerColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(iq.driver.Dialect(), step)
 		return fromU, nil
@@ -272,26 +272,26 @@ func (iq *ItemQuery) Clone() *ItemQuery {
 		return nil
 	}
 	return &ItemQuery{
-		config:      iq.config,
-		ctx:         iq.ctx.Clone(),
-		order:       append([]item.OrderOption{}, iq.order...),
-		inters:      append([]Interceptor{}, iq.inters...),
-		predicates:  append([]predicate.Item{}, iq.predicates...),
-		withAccount: iq.withAccount.Clone(),
+		config:     iq.config,
+		ctx:        iq.ctx.Clone(),
+		order:      append([]item.OrderOption{}, iq.order...),
+		inters:     append([]Interceptor{}, iq.inters...),
+		predicates: append([]predicate.Item{}, iq.predicates...),
+		withOwner:  iq.withOwner.Clone(),
 		// clone intermediate query.
 		sql:  iq.sql.Clone(),
 		path: iq.path,
 	}
 }
 
-// WithAccount tells the query-builder to eager-load the nodes that are connected to
-// the "account" edge. The optional arguments are used to configure the query builder of the edge.
-func (iq *ItemQuery) WithAccount(opts ...func(*AccountQuery)) *ItemQuery {
+// WithOwner tells the query-builder to eager-load the nodes that are connected to
+// the "owner" edge. The optional arguments are used to configure the query builder of the edge.
+func (iq *ItemQuery) WithOwner(opts ...func(*AccountQuery)) *ItemQuery {
 	query := (&AccountClient{config: iq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	iq.withAccount = query
+	iq.withOwner = query
 	return iq
 }
 
@@ -375,10 +375,10 @@ func (iq *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 		withFKs     = iq.withFKs
 		_spec       = iq.querySpec()
 		loadedTypes = [1]bool{
-			iq.withAccount != nil,
+			iq.withOwner != nil,
 		}
 	)
-	if iq.withAccount != nil {
+	if iq.withOwner != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -405,9 +405,9 @@ func (iq *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := iq.withAccount; query != nil {
-		if err := iq.loadAccount(ctx, query, nodes, nil,
-			func(n *Item, e *Account) { n.Edges.Account = e }); err != nil {
+	if query := iq.withOwner; query != nil {
+		if err := iq.loadOwner(ctx, query, nodes, nil,
+			func(n *Item, e *Account) { n.Edges.Owner = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -419,7 +419,7 @@ func (iq *ItemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Item, e
 	return nodes, nil
 }
 
-func (iq *ItemQuery) loadAccount(ctx context.Context, query *AccountQuery, nodes []*Item, init func(*Item), assign func(*Item, *Account)) error {
+func (iq *ItemQuery) loadOwner(ctx context.Context, query *AccountQuery, nodes []*Item, init func(*Item), assign func(*Item, *Account)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*Item)
 	for i := range nodes {

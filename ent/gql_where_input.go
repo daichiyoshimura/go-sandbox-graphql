@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sandbox-gql/ent/account"
+	"sandbox-gql/ent/customer"
 	"sandbox-gql/ent/item"
 	"sandbox-gql/ent/predicate"
 	"time"
@@ -81,6 +82,10 @@ type AccountWhereInput struct {
 	// "items" edge predicates.
 	HasItems     *bool             `json:"hasItems,omitempty"`
 	HasItemsWith []*ItemWhereInput `json:"hasItemsWith,omitempty"`
+
+	// "followers" edge predicates.
+	HasFollowers     *bool                 `json:"hasFollowers,omitempty"`
+	HasFollowersWith []*CustomerWhereInput `json:"hasFollowersWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -323,6 +328,24 @@ func (i *AccountWhereInput) P() (predicate.Account, error) {
 		}
 		predicates = append(predicates, account.HasItemsWith(with...))
 	}
+	if i.HasFollowers != nil {
+		p := account.HasFollowers()
+		if !*i.HasFollowers {
+			p = account.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasFollowersWith) > 0 {
+		with := make([]predicate.Customer, 0, len(i.HasFollowersWith))
+		for _, w := range i.HasFollowersWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasFollowersWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, account.HasFollowersWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyAccountWhereInput
@@ -330,6 +353,350 @@ func (i *AccountWhereInput) P() (predicate.Account, error) {
 		return predicates[0], nil
 	default:
 		return account.And(predicates...), nil
+	}
+}
+
+// CustomerWhereInput represents a where input for filtering Customer queries.
+type CustomerWhereInput struct {
+	Predicates []predicate.Customer  `json:"-"`
+	Not        *CustomerWhereInput   `json:"not,omitempty"`
+	Or         []*CustomerWhereInput `json:"or,omitempty"`
+	And        []*CustomerWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "name" field predicates.
+	Name             *string  `json:"name,omitempty"`
+	NameNEQ          *string  `json:"nameNEQ,omitempty"`
+	NameIn           []string `json:"nameIn,omitempty"`
+	NameNotIn        []string `json:"nameNotIn,omitempty"`
+	NameGT           *string  `json:"nameGT,omitempty"`
+	NameGTE          *string  `json:"nameGTE,omitempty"`
+	NameLT           *string  `json:"nameLT,omitempty"`
+	NameLTE          *string  `json:"nameLTE,omitempty"`
+	NameContains     *string  `json:"nameContains,omitempty"`
+	NameHasPrefix    *string  `json:"nameHasPrefix,omitempty"`
+	NameHasSuffix    *string  `json:"nameHasSuffix,omitempty"`
+	NameEqualFold    *string  `json:"nameEqualFold,omitempty"`
+	NameContainsFold *string  `json:"nameContainsFold,omitempty"`
+
+	// "email" field predicates.
+	Email             *string  `json:"email,omitempty"`
+	EmailNEQ          *string  `json:"emailNEQ,omitempty"`
+	EmailIn           []string `json:"emailIn,omitempty"`
+	EmailNotIn        []string `json:"emailNotIn,omitempty"`
+	EmailGT           *string  `json:"emailGT,omitempty"`
+	EmailGTE          *string  `json:"emailGTE,omitempty"`
+	EmailLT           *string  `json:"emailLT,omitempty"`
+	EmailLTE          *string  `json:"emailLTE,omitempty"`
+	EmailContains     *string  `json:"emailContains,omitempty"`
+	EmailHasPrefix    *string  `json:"emailHasPrefix,omitempty"`
+	EmailHasSuffix    *string  `json:"emailHasSuffix,omitempty"`
+	EmailEqualFold    *string  `json:"emailEqualFold,omitempty"`
+	EmailContainsFold *string  `json:"emailContainsFold,omitempty"`
+
+	// "created_at" field predicates.
+	CreatedAt      *time.Time  `json:"createdAt,omitempty"`
+	CreatedAtNEQ   *time.Time  `json:"createdAtNEQ,omitempty"`
+	CreatedAtIn    []time.Time `json:"createdAtIn,omitempty"`
+	CreatedAtNotIn []time.Time `json:"createdAtNotIn,omitempty"`
+	CreatedAtGT    *time.Time  `json:"createdAtGT,omitempty"`
+	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
+	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
+	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "updated_at" field predicates.
+	UpdatedAt      *time.Time  `json:"updatedAt,omitempty"`
+	UpdatedAtNEQ   *time.Time  `json:"updatedAtNEQ,omitempty"`
+	UpdatedAtIn    []time.Time `json:"updatedAtIn,omitempty"`
+	UpdatedAtNotIn []time.Time `json:"updatedAtNotIn,omitempty"`
+	UpdatedAtGT    *time.Time  `json:"updatedAtGT,omitempty"`
+	UpdatedAtGTE   *time.Time  `json:"updatedAtGTE,omitempty"`
+	UpdatedAtLT    *time.Time  `json:"updatedAtLT,omitempty"`
+	UpdatedAtLTE   *time.Time  `json:"updatedAtLTE,omitempty"`
+
+	// "follows" edge predicates.
+	HasFollows     *bool                `json:"hasFollows,omitempty"`
+	HasFollowsWith []*AccountWhereInput `json:"hasFollowsWith,omitempty"`
+
+	// "items" edge predicates.
+	HasItems     *bool             `json:"hasItems,omitempty"`
+	HasItemsWith []*ItemWhereInput `json:"hasItemsWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *CustomerWhereInput) AddPredicates(predicates ...predicate.Customer) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the CustomerWhereInput filter on the CustomerQuery builder.
+func (i *CustomerWhereInput) Filter(q *CustomerQuery) (*CustomerQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyCustomerWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyCustomerWhereInput is returned in case the CustomerWhereInput is empty.
+var ErrEmptyCustomerWhereInput = errors.New("ent: empty predicate CustomerWhereInput")
+
+// P returns a predicate for filtering customers.
+// An error is returned if the input is empty or invalid.
+func (i *CustomerWhereInput) P() (predicate.Customer, error) {
+	var predicates []predicate.Customer
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, customer.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.Customer, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, customer.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.Customer, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, customer.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, customer.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, customer.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, customer.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, customer.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, customer.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, customer.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, customer.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, customer.IDLTE(*i.IDLTE))
+	}
+	if i.Name != nil {
+		predicates = append(predicates, customer.NameEQ(*i.Name))
+	}
+	if i.NameNEQ != nil {
+		predicates = append(predicates, customer.NameNEQ(*i.NameNEQ))
+	}
+	if len(i.NameIn) > 0 {
+		predicates = append(predicates, customer.NameIn(i.NameIn...))
+	}
+	if len(i.NameNotIn) > 0 {
+		predicates = append(predicates, customer.NameNotIn(i.NameNotIn...))
+	}
+	if i.NameGT != nil {
+		predicates = append(predicates, customer.NameGT(*i.NameGT))
+	}
+	if i.NameGTE != nil {
+		predicates = append(predicates, customer.NameGTE(*i.NameGTE))
+	}
+	if i.NameLT != nil {
+		predicates = append(predicates, customer.NameLT(*i.NameLT))
+	}
+	if i.NameLTE != nil {
+		predicates = append(predicates, customer.NameLTE(*i.NameLTE))
+	}
+	if i.NameContains != nil {
+		predicates = append(predicates, customer.NameContains(*i.NameContains))
+	}
+	if i.NameHasPrefix != nil {
+		predicates = append(predicates, customer.NameHasPrefix(*i.NameHasPrefix))
+	}
+	if i.NameHasSuffix != nil {
+		predicates = append(predicates, customer.NameHasSuffix(*i.NameHasSuffix))
+	}
+	if i.NameEqualFold != nil {
+		predicates = append(predicates, customer.NameEqualFold(*i.NameEqualFold))
+	}
+	if i.NameContainsFold != nil {
+		predicates = append(predicates, customer.NameContainsFold(*i.NameContainsFold))
+	}
+	if i.Email != nil {
+		predicates = append(predicates, customer.EmailEQ(*i.Email))
+	}
+	if i.EmailNEQ != nil {
+		predicates = append(predicates, customer.EmailNEQ(*i.EmailNEQ))
+	}
+	if len(i.EmailIn) > 0 {
+		predicates = append(predicates, customer.EmailIn(i.EmailIn...))
+	}
+	if len(i.EmailNotIn) > 0 {
+		predicates = append(predicates, customer.EmailNotIn(i.EmailNotIn...))
+	}
+	if i.EmailGT != nil {
+		predicates = append(predicates, customer.EmailGT(*i.EmailGT))
+	}
+	if i.EmailGTE != nil {
+		predicates = append(predicates, customer.EmailGTE(*i.EmailGTE))
+	}
+	if i.EmailLT != nil {
+		predicates = append(predicates, customer.EmailLT(*i.EmailLT))
+	}
+	if i.EmailLTE != nil {
+		predicates = append(predicates, customer.EmailLTE(*i.EmailLTE))
+	}
+	if i.EmailContains != nil {
+		predicates = append(predicates, customer.EmailContains(*i.EmailContains))
+	}
+	if i.EmailHasPrefix != nil {
+		predicates = append(predicates, customer.EmailHasPrefix(*i.EmailHasPrefix))
+	}
+	if i.EmailHasSuffix != nil {
+		predicates = append(predicates, customer.EmailHasSuffix(*i.EmailHasSuffix))
+	}
+	if i.EmailEqualFold != nil {
+		predicates = append(predicates, customer.EmailEqualFold(*i.EmailEqualFold))
+	}
+	if i.EmailContainsFold != nil {
+		predicates = append(predicates, customer.EmailContainsFold(*i.EmailContainsFold))
+	}
+	if i.CreatedAt != nil {
+		predicates = append(predicates, customer.CreatedAtEQ(*i.CreatedAt))
+	}
+	if i.CreatedAtNEQ != nil {
+		predicates = append(predicates, customer.CreatedAtNEQ(*i.CreatedAtNEQ))
+	}
+	if len(i.CreatedAtIn) > 0 {
+		predicates = append(predicates, customer.CreatedAtIn(i.CreatedAtIn...))
+	}
+	if len(i.CreatedAtNotIn) > 0 {
+		predicates = append(predicates, customer.CreatedAtNotIn(i.CreatedAtNotIn...))
+	}
+	if i.CreatedAtGT != nil {
+		predicates = append(predicates, customer.CreatedAtGT(*i.CreatedAtGT))
+	}
+	if i.CreatedAtGTE != nil {
+		predicates = append(predicates, customer.CreatedAtGTE(*i.CreatedAtGTE))
+	}
+	if i.CreatedAtLT != nil {
+		predicates = append(predicates, customer.CreatedAtLT(*i.CreatedAtLT))
+	}
+	if i.CreatedAtLTE != nil {
+		predicates = append(predicates, customer.CreatedAtLTE(*i.CreatedAtLTE))
+	}
+	if i.UpdatedAt != nil {
+		predicates = append(predicates, customer.UpdatedAtEQ(*i.UpdatedAt))
+	}
+	if i.UpdatedAtNEQ != nil {
+		predicates = append(predicates, customer.UpdatedAtNEQ(*i.UpdatedAtNEQ))
+	}
+	if len(i.UpdatedAtIn) > 0 {
+		predicates = append(predicates, customer.UpdatedAtIn(i.UpdatedAtIn...))
+	}
+	if len(i.UpdatedAtNotIn) > 0 {
+		predicates = append(predicates, customer.UpdatedAtNotIn(i.UpdatedAtNotIn...))
+	}
+	if i.UpdatedAtGT != nil {
+		predicates = append(predicates, customer.UpdatedAtGT(*i.UpdatedAtGT))
+	}
+	if i.UpdatedAtGTE != nil {
+		predicates = append(predicates, customer.UpdatedAtGTE(*i.UpdatedAtGTE))
+	}
+	if i.UpdatedAtLT != nil {
+		predicates = append(predicates, customer.UpdatedAtLT(*i.UpdatedAtLT))
+	}
+	if i.UpdatedAtLTE != nil {
+		predicates = append(predicates, customer.UpdatedAtLTE(*i.UpdatedAtLTE))
+	}
+
+	if i.HasFollows != nil {
+		p := customer.HasFollows()
+		if !*i.HasFollows {
+			p = customer.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasFollowsWith) > 0 {
+		with := make([]predicate.Account, 0, len(i.HasFollowsWith))
+		for _, w := range i.HasFollowsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasFollowsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, customer.HasFollowsWith(with...))
+	}
+	if i.HasItems != nil {
+		p := customer.HasItems()
+		if !*i.HasItems {
+			p = customer.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasItemsWith) > 0 {
+		with := make([]predicate.Item, 0, len(i.HasItemsWith))
+		for _, w := range i.HasItemsWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasItemsWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, customer.HasItemsWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyCustomerWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return customer.And(predicates...), nil
 	}
 }
 
@@ -395,9 +762,9 @@ type ItemWhereInput struct {
 	UpdatedAtLT    *time.Time  `json:"updatedAtLT,omitempty"`
 	UpdatedAtLTE   *time.Time  `json:"updatedAtLTE,omitempty"`
 
-	// "account" edge predicates.
-	HasAccount     *bool                `json:"hasAccount,omitempty"`
-	HasAccountWith []*AccountWhereInput `json:"hasAccountWith,omitempty"`
+	// "owner" edge predicates.
+	HasOwner     *bool                `json:"hasOwner,omitempty"`
+	HasOwnerWith []*AccountWhereInput `json:"hasOwnerWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -607,23 +974,23 @@ func (i *ItemWhereInput) P() (predicate.Item, error) {
 		predicates = append(predicates, item.UpdatedAtLTE(*i.UpdatedAtLTE))
 	}
 
-	if i.HasAccount != nil {
-		p := item.HasAccount()
-		if !*i.HasAccount {
+	if i.HasOwner != nil {
+		p := item.HasOwner()
+		if !*i.HasOwner {
 			p = item.Not(p)
 		}
 		predicates = append(predicates, p)
 	}
-	if len(i.HasAccountWith) > 0 {
-		with := make([]predicate.Account, 0, len(i.HasAccountWith))
-		for _, w := range i.HasAccountWith {
+	if len(i.HasOwnerWith) > 0 {
+		with := make([]predicate.Account, 0, len(i.HasOwnerWith))
+		for _, w := range i.HasOwnerWith {
 			p, err := w.P()
 			if err != nil {
-				return nil, fmt.Errorf("%w: field 'HasAccountWith'", err)
+				return nil, fmt.Errorf("%w: field 'HasOwnerWith'", err)
 			}
 			with = append(with, p)
 		}
-		predicates = append(predicates, item.HasAccountWith(with...))
+		predicates = append(predicates, item.HasOwnerWith(with...))
 	}
 	switch len(predicates) {
 	case 0:

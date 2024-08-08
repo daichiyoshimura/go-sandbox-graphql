@@ -28,7 +28,7 @@ func (Item) Fields() []ent.Field {
 // Edges of the Item.
 func (Item) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("account", Account.Type).
+		edge.From("owner", Account.Type).
 			Ref("items").
 			Unique(),
 	}

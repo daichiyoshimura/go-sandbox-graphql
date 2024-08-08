@@ -7,6 +7,8 @@ package graph
 import (
 	"context"
 	"fmt"
+	"sandbox-gql/ent/account"
+	"sandbox-gql/ent/customer"
 	"sandbox-gql/graph/mapping"
 	"sandbox-gql/graph/model"
 )
@@ -39,6 +41,63 @@ func (r *mutationResolver) CreateItem(ctx context.Context, input model.CreateIte
 // UpdateItem is the resolver for the updateItem field.
 func (r *mutationResolver) UpdateItem(ctx context.Context, id int, input model.UpdateItemInput) (*model.Item, error) {
 	panic(fmt.Errorf("not implemented: UpdateItem - updateItem"))
+}
+
+// CreateCustomer is the resolver for the createCustomer field.
+func (r *mutationResolver) CreateCustomer(ctx context.Context, input model.CreateCustomerInput) (*model.Customer, error) {
+	entInput := mapping.ToEntCreateCustomerInput(input)
+	entCustomer, err := r.client.Customer.Create().SetInput(entInput).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return mapping.ToGraphCustomer(entCustomer), nil
+}
+
+// UpdateCustomer is the resolver for the updateCustomer field.
+func (r *mutationResolver) UpdateCustomer(ctx context.Context, id int, input model.UpdateCustomerInput) (*model.Customer, error) {
+	tx, err := r.client.Tx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() error {
+		if err != nil {
+			if rerr := tx.Rollback(); rerr != nil {
+				return err
+			}
+			return nil
+		}
+		if err = tx.Commit(); err != nil {
+			return err
+		}
+		return nil
+	}()
+
+	customerUpdate := tx.Customer.UpdateOneID(id)
+	if len(input.AddFollowIDs) > 0 {
+		follows, err := tx.Account.Query().
+			Where(account.IDIn(input.AddFollowIDs...)).
+			All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		customerUpdate.AddFollows(follows...)
+	}
+
+	entInput := mapping.ToEntUpdateCustomerInput(input)
+	if _, err := customerUpdate.SetInput(entInput).Save(ctx); err != nil {
+		return nil, err
+	}
+
+	entCustomer, err := tx.Customer.Query().
+		Where(customer.ID(id)).
+		WithFollows().
+		Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return mapping.ToGraphCustomer(entCustomer), nil
 }
 
 // Mutation returns MutationResolver implementation.

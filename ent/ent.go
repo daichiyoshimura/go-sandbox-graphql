@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"reflect"
 	"sandbox-gql/ent/account"
+	"sandbox-gql/ent/customer"
 	"sandbox-gql/ent/item"
 	"sync"
 
@@ -74,8 +75,9 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			account.Table: account.ValidColumn,
-			item.Table:    item.ValidColumn,
+			account.Table:  account.ValidColumn,
+			customer.Table: customer.ValidColumn,
+			item.Table:     item.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

@@ -4,6 +4,7 @@ package ent
 
 import (
 	"sandbox-gql/ent/account"
+	"sandbox-gql/ent/customer"
 	"sandbox-gql/ent/item"
 	"sandbox-gql/ent/schema"
 	"time"
@@ -59,6 +60,52 @@ func init() {
 	accountDescUpdatedAt := accountFields[3].Descriptor()
 	// account.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	account.DefaultUpdatedAt = accountDescUpdatedAt.Default.(func() time.Time)
+	customerFields := schema.Customer{}.Fields()
+	_ = customerFields
+	// customerDescName is the schema descriptor for name field.
+	customerDescName := customerFields[0].Descriptor()
+	// customer.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	customer.NameValidator = func() func(string) error {
+		validators := customerDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// customerDescEmail is the schema descriptor for email field.
+	customerDescEmail := customerFields[1].Descriptor()
+	// customer.EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	customer.EmailValidator = func() func(string) error {
+		validators := customerDescEmail.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(email string) error {
+			for _, fn := range fns {
+				if err := fn(email); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// customerDescCreatedAt is the schema descriptor for created_at field.
+	customerDescCreatedAt := customerFields[2].Descriptor()
+	// customer.DefaultCreatedAt holds the default value on creation for the created_at field.
+	customer.DefaultCreatedAt = customerDescCreatedAt.Default.(func() time.Time)
+	// customerDescUpdatedAt is the schema descriptor for updated_at field.
+	customerDescUpdatedAt := customerFields[3].Descriptor()
+	// customer.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	customer.DefaultUpdatedAt = customerDescUpdatedAt.Default.(func() time.Time)
 	itemFields := schema.Item{}.Fields()
 	_ = itemFields
 	// itemDescName is the schema descriptor for name field.

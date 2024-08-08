@@ -35,13 +35,16 @@ type Account struct {
 type AccountEdges struct {
 	// Items holds the value of the items edge.
 	Items []*Item `json:"items,omitempty"`
+	// Followers holds the value of the followers edge.
+	Followers []*Customer `json:"followers,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 	// totalCount holds the count of the edges above.
-	totalCount [1]map[string]int
+	totalCount [2]map[string]int
 
-	namedItems map[string][]*Item
+	namedItems     map[string][]*Item
+	namedFollowers map[string][]*Customer
 }
 
 // ItemsOrErr returns the Items value or an error if the edge
@@ -51,6 +54,15 @@ func (e AccountEdges) ItemsOrErr() ([]*Item, error) {
 		return e.Items, nil
 	}
 	return nil, &NotLoadedError{edge: "items"}
+}
+
+// FollowersOrErr returns the Followers value or an error if the edge
+// was not loaded in eager-loading.
+func (e AccountEdges) FollowersOrErr() ([]*Customer, error) {
+	if e.loadedTypes[1] {
+		return e.Followers, nil
+	}
+	return nil, &NotLoadedError{edge: "followers"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -127,6 +139,11 @@ func (a *Account) QueryItems() *ItemQuery {
 	return NewAccountClient(a.config).QueryItems(a)
 }
 
+// QueryFollowers queries the "followers" edge of the Account entity.
+func (a *Account) QueryFollowers() *CustomerQuery {
+	return NewAccountClient(a.config).QueryFollowers(a)
+}
+
 // Update returns a builder for updating this Account.
 // Note that you need to call Account.Unwrap() before calling this method if this Account
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -186,6 +203,30 @@ func (a *Account) appendNamedItems(name string, edges ...*Item) {
 		a.Edges.namedItems[name] = []*Item{}
 	} else {
 		a.Edges.namedItems[name] = append(a.Edges.namedItems[name], edges...)
+	}
+}
+
+// NamedFollowers returns the Followers named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (a *Account) NamedFollowers(name string) ([]*Customer, error) {
+	if a.Edges.namedFollowers == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := a.Edges.namedFollowers[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (a *Account) appendNamedFollowers(name string, edges ...*Customer) {
+	if a.Edges.namedFollowers == nil {
+		a.Edges.namedFollowers = make(map[string][]*Customer)
+	}
+	if len(edges) == 0 {
+		a.Edges.namedFollowers[name] = []*Customer{}
+	} else {
+		a.Edges.namedFollowers[name] = append(a.Edges.namedFollowers[name], edges...)
 	}
 }
 
