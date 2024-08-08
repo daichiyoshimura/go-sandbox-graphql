@@ -7,10 +7,12 @@ package graph
 import (
 	"context"
 	"fmt"
+	"sandbox-gql/ent"
 	"sandbox-gql/ent/account"
 	"sandbox-gql/ent/customer"
 	"sandbox-gql/graph/mapping"
 	"sandbox-gql/graph/model"
+	"sandbox-gql/internal/db"
 )
 
 // CreateAccount is the resolver for the createAccount field.
@@ -55,49 +57,44 @@ func (r *mutationResolver) CreateCustomer(ctx context.Context, input model.Creat
 
 // UpdateCustomer is the resolver for the updateCustomer field.
 func (r *mutationResolver) UpdateCustomer(ctx context.Context, id int, input model.UpdateCustomerInput) (*model.Customer, error) {
-	tx, err := r.client.Tx(ctx)
-	if err != nil {
-		return nil, err
-	}
+	return db.RunInTransaction(ctx, r.client, func(tx *ent.Tx) (*model.Customer, error) {
 
-	defer func() error {
-		if err != nil {
-			if rerr := tx.Rollback(); rerr != nil {
-				return err
+		customerUpdate := tx.Customer.UpdateOneID(id)
+		if len(input.AddFollowIDs) > 0 {
+			follows, err := tx.Account.Query().
+				Where(account.IDIn(input.AddFollowIDs...)).
+				All(ctx)
+			if err != nil {
+				return nil, err
 			}
-			return nil
+			customerUpdate.AddFollows(follows...)
 		}
-		if err = tx.Commit(); err != nil {
-			return err
-		}
-		return nil
-	}()
 
-	customerUpdate := tx.Customer.UpdateOneID(id)
-	if len(input.AddFollowIDs) > 0 {
-		follows, err := tx.Account.Query().
-			Where(account.IDIn(input.AddFollowIDs...)).
-			All(ctx)
+		if len(input.RemoveFollowIDs) > 0 {
+			follows, err := tx.Account.Query().
+				Where(account.IDIn(input.RemoveFollowIDs...)).
+				All(ctx)
+			if err != nil {
+				return nil, err
+			}
+			customerUpdate.RemoveFollows(follows...)
+		}
+
+		entInput := mapping.ToEntUpdateCustomerInput(input)
+		if _, err := customerUpdate.SetInput(entInput).Save(ctx); err != nil {
+			return nil, err
+		}
+
+		entCustomer, err := tx.Customer.Query().
+			Where(customer.ID(id)).
+			WithFollows().
+			Only(ctx)
 		if err != nil {
 			return nil, err
 		}
-		customerUpdate.AddFollows(follows...)
-	}
 
-	entInput := mapping.ToEntUpdateCustomerInput(input)
-	if _, err := customerUpdate.SetInput(entInput).Save(ctx); err != nil {
-		return nil, err
-	}
-
-	entCustomer, err := tx.Customer.Query().
-		Where(customer.ID(id)).
-		WithFollows().
-		Only(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return mapping.ToGraphCustomer(entCustomer), nil
+		return mapping.ToGraphCustomer(entCustomer), nil
+	})
 }
 
 // Mutation returns MutationResolver implementation.
